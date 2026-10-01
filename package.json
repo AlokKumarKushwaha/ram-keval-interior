@@ -1,0 +1,25 @@
+{
+  "name": "ram-keval-interior",
+  "version": "1.0.0",
+  "description": "Fullstack Website & Admin Management System for Ram Keval Interior",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "furniture",
+    "interior",
+    "ram-keval-interior",
+    "fullstack",
+    "admin-dashboard",
+    "custom-order"
+  ],
+  "author": "Ram Keval Interior",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}
