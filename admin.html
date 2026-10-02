@@ -329,16 +329,27 @@
 
                     <hr style="border: none; border-top: 1px solid var(--border-color); margin: 24px 0;">
 
-                    <h4>Data Backup & Safety</h4>
-                    <p style="color: #777; font-size: 0.85rem; margin-bottom: 16px;">Download your full catalog and orders as a backup file anytime.</p>
+                    <h4><i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Data Backup & Restore Safety</h4>
+                    <p style="color: #777; font-size: 0.85rem; margin-bottom: 16px;">Download your full catalog and orders as a backup file anytime, or restore from a previously downloaded file.</p>
 
-                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;">
                         <button id="exportDataBtn" class="btn btn-outline" style="background: #fff;">
                             <i class="fa-solid fa-download"></i> Download Backup (JSON)
                         </button>
+                        
+                        <label class="btn btn-outline" style="background: #fdfaf6; border-color: var(--accent); color: var(--primary-dark); cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-upload"></i> Restore Backup from File
+                            <input type="file" id="restoreBackupFileInput" accept=".json" style="display: none;">
+                        </label>
+
                         <button id="resetDataBtn" class="btn btn-outline" style="color: #d32f2f; border-color: #ffcdd2;">
                             <i class="fa-solid fa-arrows-rotate"></i> Reset to Sample Data
                         </button>
+                    </div>
+
+                    <div style="background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: #2e7d32; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-user-shield" style="font-size: 1.1rem;"></i>
+                        <span><strong>Security Active:</strong> Auto-logout activates after 15 minutes of inactivity to protect your business data.</span>
                     </div>
                 </div>
             </div>

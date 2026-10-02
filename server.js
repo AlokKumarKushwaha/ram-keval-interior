@@ -483,6 +483,21 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
+    // 6. Backup Restore API
+    if (pathname === '/api/backup/restore' && method === 'POST') {
+        const body = await parseBody(req);
+        if (body.products && Array.isArray(body.products)) {
+            writeJSON(PRODUCTS_FILE, body.products);
+        }
+        if (body.orders && Array.isArray(body.orders)) {
+            writeJSON(ORDERS_FILE, body.orders);
+        }
+        if (body.shop && typeof body.shop === 'object') {
+            writeJSON(SETTINGS_FILE, body.shop);
+        }
+        return sendJSON(res, 200, { success: true, message: 'Backup successfully restored to database!' });
+    }
+
     // -------------------------------------------------------------
     // STATIC FILE SERVING (PUBLIC & UPLOADS)
     // -------------------------------------------------------------

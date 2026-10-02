@@ -56,9 +56,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const settingPin = document.getElementById("settingPin");
     const exportDataBtn = document.getElementById("exportDataBtn");
     const resetDataBtn = document.getElementById("resetDataBtn");
+    const restoreBackupFileInput = document.getElementById("restoreBackupFileInput");
 
     // -------------------------------------------------------------
-    // AUTHENTICATION
+    // AUTHENTICATION & BRUTE-FORCE SECURITY
     // -------------------------------------------------------------
     const isLoggedIn = sessionStorage.getItem("rki_admin_auth") === "true";
     if (isLoggedIn) {
@@ -68,8 +69,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (adminLoginForm) {
         adminLoginForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const enteredPin = adminPinInput.value.trim();
 
+            // Check if account is temporarily locked due to 5 failed attempts
+            const lockoutUntil = parseInt(localStorage.getItem("rki_lockout_until") || "0", 10);
+            const now = Date.now();
+            if (lockoutUntil > now) {
+                const remainingMinutes = Math.ceil((lockoutUntil - now) / 60000);
+                alert(`🔒 Security Lock: Too many failed PIN attempts. Please wait ${remainingMinutes} more minute(s) before trying again.`);
+                return;
+            }
+
+            const enteredPin = adminPinInput.value.trim();
             let authenticated = false;
 
             // Try backend API verification first
@@ -91,10 +101,22 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (authenticated || enteredPin === "1985") {
+                // Clear failure counters on success
+                localStorage.removeItem("rki_failed_attempts");
+                localStorage.removeItem("rki_lockout_until");
+
                 sessionStorage.setItem("rki_admin_auth", "true");
                 showDashboard();
             } else {
-                alert("Incorrect PIN! / ग़लत पिन! Default is 1985.");
+                let failed = parseInt(localStorage.getItem("rki_failed_attempts") || "0", 10) + 1;
+                localStorage.setItem("rki_failed_attempts", failed);
+
+                if (failed >= 5) {
+                    localStorage.setItem("rki_lockout_until", (Date.now() + 5 * 60 * 1000).toString());
+                    alert("🔒 Security Alert: Too many incorrect PIN attempts! Login is locked for 5 minutes.");
+                } else {
+                    alert(`Incorrect PIN! / ग़लत पिन! (${5 - failed} attempts remaining). Default is 1985.`);
+                }
                 adminPinInput.value = "";
                 adminPinInput.focus();
             }
@@ -571,6 +593,77 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+    // -------------------------------------------------------------
+    // RESTORE BACKUP (FROM JSON FILE)
+    // -------------------------------------------------------------
+    if (restoreBackupFileInput) {
+        restoreBackupFileInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                try {
+                    const backupData = JSON.parse(evt.target.result);
+                    if (!backupData.products && !backupData.orders) {
+                        alert("Invalid backup file! It does not contain products or orders data.");
+                        return;
+                    }
+
+                    const prodCount = backupData.products ? backupData.products.length : 0;
+                    const ordCount = backupData.orders ? backupData.orders.length : 0;
+
+                    if (confirm(`Do you want to restore this backup? It contains ${prodCount} products and ${ordCount} customer orders. Your current catalog will be updated.`)) {
+                        // 1. Sync to backend REST API
+                        try {
+                            await fetch("/api/backup/restore", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(backupData)
+                            });
+                        } catch (err) {
+                            console.log("Offline restore fallback:", err);
+                        }
+
+                        // 2. Save locally
+                        if (backupData.products) Storage.saveProducts(backupData.products);
+                        if (backupData.orders) Storage.saveOrders(backupData.orders);
+                        if (backupData.shop) Storage.saveSettings(backupData.shop);
+
+                        alert(`✓ Backup restored successfully! Recovered ${prodCount} products and ${ordCount} orders.`);
+                        await refreshAllData();
+                    }
+                } catch (parseErr) {
+                    alert("Error reading backup JSON file: " + parseErr.message);
+                } finally {
+                    restoreBackupFileInput.value = "";
+                }
+            };
+            reader.readAsText(file);
+        });
+    }
+
+    // -------------------------------------------------------------
+    // SECURITY: INACTIVITY AUTO-LOGOUT (15 MINUTES)
+    // -------------------------------------------------------------
+    let inactivityTimeout;
+    const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 Minutes
+
+    function resetInactivityTimer() {
+        if (sessionStorage.getItem("rki_admin_auth") !== "true") return;
+        clearTimeout(inactivityTimeout);
+        inactivityTimeout = setTimeout(() => {
+            sessionStorage.removeItem("rki_admin_auth");
+            alert("🔒 Security Notice: Your session has expired due to 15 minutes of inactivity to protect client data. Please enter your PIN to login again.");
+            location.reload();
+        }, INACTIVITY_LIMIT_MS);
+    }
+
+    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evtName => {
+        window.addEventListener(evtName, resetInactivityTimer, { passive: true });
+    });
+    resetInactivityTimer();
 
     function escapeHtml(text) {
         if (!text) return "";
