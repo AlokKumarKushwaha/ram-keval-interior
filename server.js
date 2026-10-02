@@ -31,8 +31,8 @@ const DEFAULT_SETTINGS = {
     email: "ramashisha55@gmail.com",
     instagram: "ramkeval_interior",
     facebook: "ramkevalinterior",
-    phone: "+977-9800000000",
-    whatsapp: "9779800000000",
+    phone: "+977 9823471413 (For Nepal Only)",
+    whatsapp: "9779823471413",
     currencySymbol: "Rs.",
     adminPin: "1985"
 };

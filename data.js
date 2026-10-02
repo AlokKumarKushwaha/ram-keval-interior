@@ -8,8 +8,8 @@ const INITIAL_SETTINGS = {
     email: "ramashisha55@gmail.com",
     instagram: "ramkeval_interior",
     facebook: "ramkevalinterior",
-    phone: "+977-9800000000", // Editable in Admin
-    whatsapp: "9779800000000", // For direct WhatsApp ordering
+    phone: "+977 9823471413 (For Nepal Only)",
+    whatsapp: "9779823471413", // Direct WhatsApp ordering to Ram Keval Interior
     currencySymbol: "Rs.",
     adminPin: "1985", // Default master PIN
     locations: [
