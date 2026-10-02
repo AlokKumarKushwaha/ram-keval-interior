@@ -35,12 +35,19 @@
     box-sizing: border-box;
 }
 
+html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif;
     background-color: var(--light-bg);
     color: var(--text-main);
     line-height: 1.6;
-    overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -1879,23 +1886,41 @@ img {
     .catalog-controls {
         flex-direction: column;
         align-items: stretch;
-        gap: 12px;
-        padding: 12px;
+        gap: 14px;
+        padding: 14px 10px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
     }
     .category-tabs {
-        overflow-x: auto;
-        white-space: nowrap;
-        flex-wrap: nowrap;
-        padding-bottom: 6px;
-        -webkit-overflow-scrolling: touch;
+        display: flex;
+        flex-wrap: wrap !important;
+        white-space: normal !important;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow-x: visible;
+        padding-bottom: 0;
     }
     .cat-btn {
-        flex-shrink: 0;
-        font-size: 0.8rem;
-        padding: 6px 12px;
+        flex: 0 0 auto;
+        white-space: nowrap;
+        font-size: 0.82rem;
+        padding: 7px 14px;
+        border-radius: 20px;
     }
     .catalog-search-box {
-        min-width: 100%;
+        width: 100%;
+        min-width: 0 !important;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    .catalog-search-box input {
+        width: 100%;
+        box-sizing: border-box;
     }
     .products-grid {
         grid-template-columns: 1fr;
