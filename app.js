@@ -93,20 +93,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Mobile Navigation Toggle
+    // Mobile Navigation Toggle
     if (mobileMenuBtn && navLinks) {
-        mobileMenuBtn.addEventListener("click", () => {
-            if (navLinks.style.display === "flex") {
-                navLinks.style.display = "none";
-            } else {
-                navLinks.style.display = "flex";
-                navLinks.style.flexDirection = "column";
-                navLinks.style.position = "absolute";
-                navLinks.style.top = "100%";
-                navLinks.style.left = "0";
-                navLinks.style.width = "100%";
-                navLinks.style.background = "#fff";
-                navLinks.style.padding = "20px";
-                navLinks.style.boxShadow = "0 10px 25px rgba(0,0,0,0.1)";
+        mobileMenuBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            navLinks.classList.toggle("mobile-open");
+        });
+
+        // Close mobile drawer when any link is clicked
+        navLinks.querySelectorAll("a").forEach(link => {
+            link.addEventListener("click", () => {
+                navLinks.classList.remove("mobile-open");
+            });
+        });
+
+        // Close when clicking outside
+        document.addEventListener("click", (e) => {
+            if (!navLinks.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                navLinks.classList.remove("mobile-open");
             }
         });
     }

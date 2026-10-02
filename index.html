@@ -44,7 +44,7 @@
             </a>
 
             <nav>
-                <ul class="nav-links">
+                <ul class="nav-links" id="mainNavLinks">
                     <li><a href="#home" class="active">Home</a></li>
                     <li><a href="#catalog">Furniture Collection</a></li>
                     <li><a href="#about">Craftsman Legacy</a></li>
@@ -52,13 +52,18 @@
                     <li><a href="#locations">Work Locations</a></li>
                     <li><a href="#visiting-card">Visiting Card</a></li>
                     <li><a href="#contact">Contact</a></li>
+                    <li class="mobile-only-menu-item">
+                        <a href="#catalog" class="btn btn-primary" style="color: #fff; width: 100%; margin-top: 10px; padding: 12px;">
+                            <i class="fa-solid fa-couch"></i> Browse & Order Now
+                        </a>
+                    </li>
                 </ul>
             </nav>
 
             <div class="nav-cta-group">
-                <a href="#catalog" class="btn btn-primary"><i class="fa-solid fa-couch"></i> Browse & Order</a>
-                <a href="https://wa.me/9779823471413?text=Namaste%20Ram%20Keval%20ji,%20I%20want%20to%20inquire%20about%20your%20furniture%20and%20interior%20work." target="_blank" class="btn btn-outline" style="color: #25d366; border-color: #25d366;">
-                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                <a href="#catalog" class="btn btn-primary nav-btn-desktop"><i class="fa-solid fa-couch"></i> Browse & Order</a>
+                <a href="https://wa.me/9779823471413?text=Namaste%20Ram%20Keval%20ji,%20I%20want%20to%20inquire%20about%20your%20furniture%20and%20interior%20work." target="_blank" class="btn btn-outline nav-wa-btn" style="color: #25d366; border-color: #25d366;">
+                    <i class="fa-brands fa-whatsapp"></i> <span class="wa-btn-label">WhatsApp</span>
                 </a>
                 <button class="mobile-toggle" id="mobileMenuBtn" aria-label="Toggle Menu"><i class="fa-solid fa-bars"></i></button>
             </div>

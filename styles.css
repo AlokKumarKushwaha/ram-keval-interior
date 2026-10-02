@@ -190,6 +190,14 @@ img {
     color: var(--primary);
 }
 
+.mobile-only-menu-item {
+    display: none;
+}
+
+.nav-btn-desktop {
+    display: inline-flex;
+}
+
 .nav-cta-group {
     display: flex;
     align-items: center;
@@ -1648,44 +1656,282 @@ img {
     }
 }
 
+/* ==========================================================================
+   MOBILE & TABLET RESPONSIVE STYLES
+   ========================================================================== */
 @media (max-width: 768px) {
-    .nav-links {
-        display: none;
+    /* Top Bar Mobile */
+    .top-notice-bar {
+        padding: 6px 12px;
+        font-size: 0.74rem;
+    }
+    .top-bar-inner {
+        flex-direction: column;
+        gap: 6px;
+        text-align: center;
+    }
+    .location-pills {
+        justify-content: center;
+        gap: 4px;
+    }
+    .location-tag {
+        font-size: 0.68rem;
+        padding: 2px 7px;
+    }
+
+    /* Navigation Header Mobile */
+    .nav-container {
+        padding: 10px 14px;
+        position: relative;
+    }
+    .brand-logo {
+        gap: 8px;
+    }
+    .brand-logo-img {
+        height: 40px;
+        max-width: 95px;
+    }
+    .brand-text h1 {
+        font-size: 1.15rem;
+        line-height: 1.1;
+    }
+    .brand-text p {
+        font-size: 0.62rem;
+        letter-spacing: 1px;
+    }
+
+    /* CTA Group in Navbar */
+    .nav-cta-group {
+        gap: 8px;
+    }
+    .nav-btn-desktop {
+        display: none !important; /* Hide bulky button on mobile navbar to prevent overlap */
+    }
+    .nav-wa-btn {
+        padding: 6px 10px;
+        font-size: 0.82rem;
+        border-radius: 6px;
+    }
+    .wa-btn-label {
+        display: none; /* Icon only on mobile header for clean look */
     }
     .mobile-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        background: #fdfaf6;
+        border: 1px solid #ebdcd0;
+        border-radius: 6px;
+        font-size: 1.25rem;
+        color: var(--dark);
+        cursor: pointer;
+    }
+
+    /* Mobile Navigation Drawer */
+    .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: #ffffff;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 12px 18px 20px;
+        box-shadow: 0 16px 30px rgba(0,0,0,0.14);
+        border-bottom: 3px solid var(--accent);
+        z-index: 1200;
+    }
+    .nav-links.mobile-open {
+        display: flex;
+    }
+    .nav-links li {
+        width: 100%;
+        border-bottom: 1px solid #f2e9e1;
+    }
+    .nav-links a {
         display: block;
+        padding: 11px 4px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--dark);
+    }
+    .mobile-only-menu-item {
+        display: block;
+        border-bottom: none !important;
+        margin-top: 6px;
+    }
+
+    /* Hero Section Mobile */
+    .hero-section {
+        padding: 24px 0 40px;
+    }
+    .hero-badge {
+        font-size: 0.76rem;
+        padding: 5px 12px;
+        margin-bottom: 14px;
     }
     .hero-title {
-        font-size: 2.3rem;
+        font-size: 2rem;
+        line-height: 1.22;
+        margin-bottom: 14px;
+    }
+    .hero-subtitle {
+        font-size: 0.92rem;
+        line-height: 1.55;
+        margin-bottom: 22px;
+    }
+    .hero-actions {
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+    }
+    .hero-actions .btn {
+        width: 100%;
+        padding: 13px 18px !important;
+        font-size: 0.94rem !important;
     }
     .hero-highlights {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        text-align: center;
+        padding-top: 18px;
     }
+    .highlight-item h4 {
+        font-size: 1.25rem;
+    }
+    .highlight-item p {
+        font-size: 0.7rem;
+    }
+    .hero-card-wrapper {
+        margin-top: 12px;
+    }
+    .founder-img-box {
+        height: 320px;
+    }
+
+    /* Locations & Services Grids */
     .locations-grid {
         grid-template-columns: 1fr;
+        gap: 14px;
     }
     .services-grid {
         grid-template-columns: 1fr;
+        gap: 16px;
     }
-    .form-row-2 {
-        grid-template-columns: 1fr;
+    .service-card {
+        padding: 22px 18px;
     }
-    .footer-grid {
-        grid-template-columns: 1fr;
-    }
-    .admin-stats-grid {
-        grid-template-columns: 1fr;
+
+    /* Digital Business Card Mobile */
+    .digital-business-card {
+        padding: 18px 14px;
+        border-radius: 14px;
     }
     .dbc-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
     }
+    .dbc-name {
+        font-size: 1.35rem;
+    }
+    .dbc-vignette-grid {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    .dbc-vignette {
+        width: 50px;
+        height: 62px;
+    }
     .dbc-services-row {
         grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        padding: 10px 8px;
+    }
+    .dbc-service-item span {
+        font-size: 0.62rem;
     }
     .dbc-quality-strip {
-        font-size: 0.65rem;
+        font-size: 0.62rem;
         flex-wrap: wrap;
+        gap: 6px;
+    }
+    .dbc-motto-box {
+        padding: 8px 12px;
+    }
+    .dbc-motto-quote {
+        font-size: 0.86rem;
+    }
+    .dbc-footer {
+        flex-direction: column;
+        gap: 6px;
+    }
+    .dbc-contact-link {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    /* Catalog Section Mobile */
+    .catalog-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 12px;
+    }
+    .category-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+        padding-bottom: 6px;
+        -webkit-overflow-scrolling: touch;
+    }
+    .cat-btn {
+        flex-shrink: 0;
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+    .catalog-search-box {
+        min-width: 100%;
+    }
+    .products-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .prod-img-box {
+        height: 220px;
+    }
+
+    /* Forms & Modal Mobile */
+    .form-row-2 {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    .modal-box {
+        max-width: 95vw;
+        max-height: 94vh;
+        border-radius: 14px;
+    }
+    .modal-header {
+        padding: 14px 18px;
+    }
+    .modal-body {
+        padding: 18px 14px;
+    }
+
+    /* Footer & Floating WhatsApp Mobile */
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+    .floating-wa-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.6rem;
+        bottom: 16px;
+        right: 16px;
     }
 }
