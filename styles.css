@@ -644,24 +644,240 @@ img {
     position: relative;
 }
 
-.about-visiting-card {
+/* Digital Business Card Mockup */
+.digital-business-card {
+    background: #ffffff;
+    background-image: 
+        radial-gradient(circle at 100% 0%, rgba(212, 163, 115, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 0% 100%, rgba(139, 69, 19, 0.06) 0%, transparent 40%);
+    border-radius: 18px;
+    padding: 26px 24px;
+    box-shadow: 0 20px 45px rgba(27, 20, 16, 0.14), 0 2px 10px rgba(0, 0, 0, 0.04);
+    border: 2px solid #dfc3a7;
+    position: relative;
+    transition: var(--transition);
+    overflow: hidden;
+}
+
+.digital-business-card::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    border: 1px solid rgba(139, 69, 19, 0.15);
+    border-radius: 12px;
+    pointer-events: none;
+}
+
+.digital-business-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 28px 55px rgba(27, 20, 16, 0.2);
+    border-color: var(--accent);
+}
+
+.dbc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.dbc-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.dbc-logo {
+    width: 68px;
+    height: 68px;
+    object-fit: contain;
+    border-radius: 10px;
     background: #fff;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-    border: 2px solid var(--accent);
-    padding: 12px;
-    transform: rotate(-1.5deg);
+    padding: 4px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    border: 1px solid #ebdcd0;
+}
+
+.dbc-brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.dbc-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--dark);
+    line-height: 1.1;
+}
+
+.dbc-title {
+    font-size: 0.88rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: var(--primary);
+    margin-top: 1px;
+}
+
+.dbc-sub {
+    font-size: 0.68rem;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+.dbc-vignette-grid {
+    display: flex;
+    gap: 6px;
+}
+
+.dbc-vignette {
+    width: 58px;
+    height: 72px;
+    border-radius: 6px;
+    background-size: cover;
+    background-position: center;
+    border: 1.5px solid #d4a373;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+    transition: transform 0.3s ease;
+}
+
+.dbc-vignette:hover {
+    transform: scale(1.08);
+}
+
+/* Services 4 pills */
+.dbc-services-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    background: #faf6f0;
+    padding: 12px 10px;
+    border-radius: 10px;
+    border: 1px dashed #dfc7b0;
+    margin-bottom: 14px;
+    position: relative;
+    z-index: 1;
+}
+
+.dbc-service-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+}
+
+.dbc-service-item i {
+    color: var(--primary);
+    font-size: 1.05rem;
+}
+
+.dbc-service-item span {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--dark);
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+}
+
+/* Quality Promise Strip */
+.dbc-quality-strip {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ebdcd0;
+    position: relative;
+    z-index: 1;
+}
+
+.dbc-dot {
+    color: var(--accent);
+}
+
+/* Signature Motto */
+.dbc-motto-box {
+    background: linear-gradient(135deg, #2b1810, #4a2c1d);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 16px;
+    border: 1px solid var(--accent);
+    position: relative;
+    z-index: 1;
+}
+
+.dbc-motto-quote {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem;
+    font-style: italic;
+    color: #ffe6cf;
+}
+
+.dbc-motto-sub {
+    font-size: 0.72rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 2px;
+    font-weight: 600;
+}
+
+/* Footer contacts */
+.dbc-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+}
+
+.dbc-contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    color: var(--text-main);
+    font-weight: 500;
+    background: #fdfaf6;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid #ebdcd0;
     transition: var(--transition);
 }
 
-.about-visiting-card:hover {
-    transform: rotate(0deg) scale(1.02);
+.dbc-contact-link:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: #fff;
 }
 
-.about-visiting-card img {
-    border-radius: 12px;
-    width: 100%;
-    height: auto;
+.dbc-wa-pill {
+    color: #1e7e34;
+    font-weight: 700;
+    background: #e8f5e9;
+    border-color: #c8e6c9;
+}
+
+.dbc-wa-pill:hover {
+    color: #1b5e20;
+    background: #d4edda;
 }
 
 .card-caption-pill {
@@ -1459,5 +1675,17 @@ img {
     }
     .admin-stats-grid {
         grid-template-columns: 1fr;
+    }
+    .dbc-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .dbc-services-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .dbc-quality-strip {
+        font-size: 0.65rem;
+        flex-wrap: wrap;
     }
 }
