@@ -438,6 +438,37 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
+    // Customer Track Order API (Lookup by Order ID or Phone number)
+    if (pathname.startsWith('/api/orders/track')) {
+        const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        let query = urlObj.searchParams.get('q') || '';
+        if (!query) {
+            const parts = pathname.split('/');
+            if (parts.length > 4) query = decodeURIComponent(parts[4]);
+        }
+        query = (query || '').trim();
+
+        if (!query) {
+            return sendJSON(res, 400, { error: 'Please enter an Order ID or Phone number to track.' });
+        }
+
+        const cleanQuery = query.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const orders = readJSON(ORDERS_FILE, DEFAULT_ORDERS);
+
+        const matches = orders.filter(o => {
+            const cleanId = (o.orderId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const cleanPhone = (o.customerPhone || '').replace(/[^0-9]/g, '');
+            return (cleanId && (cleanId === cleanQuery || cleanId.includes(cleanQuery))) || 
+                   (cleanPhone && (cleanPhone.endsWith(cleanQuery) || cleanPhone.includes(cleanQuery)));
+        });
+
+        if (matches.length === 0) {
+            return sendJSON(res, 404, { error: 'No order found matching "' + query + '". Please verify your Order ID or Phone number.' });
+        }
+
+        return sendJSON(res, 200, { success: true, orders: matches });
+    }
+
     // Update Order Status
     if (pathname.startsWith('/api/orders/') && pathname.endsWith('/status') && method === 'PATCH') {
         const orderId = pathname.split('/')[3];

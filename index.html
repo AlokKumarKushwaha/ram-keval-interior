@@ -92,9 +92,10 @@
                 <span class="location-tag"><i class="fa-solid fa-location-dot"></i> Gorakhpur</span>
                 <span class="location-tag"><i class="fa-solid fa-location-dot"></i> Lucknow</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 18px; font-size: 0.82rem;">
+            <div style="display: flex; align-items: center; gap: 16px; font-size: 0.82rem; flex-wrap: wrap;">
                 <span><i class="fa-solid fa-phone" style="color: #d4a373;"></i> <strong>+977 9823471413</strong> (For Nepal Only)</span>
                 <span><i class="fa-solid fa-envelope" style="color: #d4a373;"></i> ramashisha55@gmail.com</span>
+                <a href="#track" id="topTrackLink" class="top-track-btn" style="color: #ffd166; font-weight: 600; text-decoration: underline;"><i class="fa-solid fa-truck-fast"></i> Track Order Status</a>
             </div>
         </div>
     </div>
@@ -119,8 +120,14 @@
                     <li><a href="#locations">Work Locations</a></li>
                     <li><a href="#visiting-card">Visiting Card</a></li>
                     <li><a href="#contact">Contact</a></li>
+                    <li><a href="#track" id="navTrackOrderLink" style="color: var(--primary); font-weight: 700;"><i class="fa-solid fa-truck-fast"></i> Track Order</a></li>
                     <li class="mobile-only-menu-item">
-                        <a href="#catalog" class="btn btn-primary" style="color: #fff; width: 100%; margin-top: 10px; padding: 12px;">
+                        <button id="mobileTrackOrderBtn" class="btn btn-outline" style="color: var(--primary); border-color: var(--accent); width: 100%; margin-top: 8px; padding: 10px; font-weight: 600;">
+                            <i class="fa-solid fa-truck-fast"></i> Track Order Status / आर्डर ट्रैक करें
+                        </button>
+                    </li>
+                    <li class="mobile-only-menu-item">
+                        <a href="#catalog" class="btn btn-primary" style="color: #fff; width: 100%; margin-top: 6px; padding: 12px;">
                             <i class="fa-solid fa-couch"></i> Browse & Order Now
                         </a>
                     </li>
@@ -128,6 +135,7 @@
             </nav>
 
             <div class="nav-cta-group">
+                <button id="navTrackCtaBtn" class="btn btn-outline nav-track-btn"><i class="fa-solid fa-truck-fast"></i> Track Order</button>
                 <a href="#catalog" class="btn btn-primary nav-btn-desktop"><i class="fa-solid fa-couch"></i> Browse & Order</a>
                 <a href="https://wa.me/9779823471413?text=Namaste%20Ram%20Keval%20ji,%20I%20want%20to%20inquire%20about%20your%20furniture%20and%20interior%20work." target="_blank" class="btn btn-outline nav-wa-btn" style="color: #25d366; border-color: #25d366;">
                     <i class="fa-brands fa-whatsapp"></i> <span class="wa-btn-label">WhatsApp</span>
@@ -527,8 +535,55 @@
                     <a href="#" id="sendWaOrderBtn" target="_blank" class="btn btn-primary" style="background: #25d366; border-color: #25d366;">
                         <i class="fa-brands fa-whatsapp"></i> Send Order Copy on WhatsApp
                     </a>
+                    <button class="btn btn-outline" id="successTrackLiveBtn" style="border-color: var(--primary); color: var(--primary); font-weight: 700;">
+                        <i class="fa-solid fa-truck-fast"></i> Track Order Status Live (लाइव स्टेटस देखें)
+                    </button>
                     <button class="btn btn-outline" id="closeSuccessBtn">Continue Browsing</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Order Tracking Modal -->
+    <div class="modal-overlay" id="trackOrderModal">
+        <div class="modal-box track-modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-truck-fast"></i> Track Furniture Order Status</h3>
+                <button class="modal-close-btn" id="closeTrackModalBtn">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 22px;">
+                <!-- Search Box -->
+                <div class="track-search-wrapper">
+                    <p style="font-size: 0.9rem; color: #555; margin-bottom: 12px;">
+                        Check real-time craftsmanship & delivery status. Enter your <strong>Order ID</strong> (e.g. <code>RKI-1001</code>) or your <strong>Mobile Phone Number</strong>:
+                    </p>
+                    <form id="trackOrderForm" style="display: flex; gap: 8px; margin-bottom: 16px;">
+                        <input type="text" id="trackOrderInput" placeholder="Enter Order ID (e.g. RKI-1001) or Phone" required style="flex: 1; padding: 12px 14px; border: 2px solid var(--accent); border-radius: 8px; font-size: 0.92rem;">
+                        <button type="submit" class="btn btn-primary" id="trackSubmitBtn" style="padding: 12px 20px; font-weight: 600; white-space: nowrap;">
+                            <i class="fa-solid fa-magnifying-glass"></i> Track
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Recent Order Quick Access -->
+                <div id="recentOrderQuickBox" style="display: none; margin-bottom: 16px; background: #faf5ee; padding: 10px 14px; border-radius: 8px; border: 1px dashed var(--accent); font-size: 0.85rem; justify-content: space-between; align-items: center;">
+                    <span><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> Your Recent Order: <strong id="recentOrderIdTag">RKI-0000</strong></span>
+                    <button type="button" id="quickTrackRecentBtn" style="background: var(--primary); color: #fff; border: none; padding: 4px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 0.78rem;">Track Now</button>
+                </div>
+
+                <!-- Loader -->
+                <div id="trackLoader" style="display: none; text-align: center; padding: 30px;">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.2rem; color: var(--primary);"></i>
+                    <p style="color: #666; margin-top: 10px; font-size: 0.88rem;">Connecting with Ram Keval workshop database...</p>
+                </div>
+
+                <!-- Error Box -->
+                <div id="trackErrorMsg" style="display: none; background: #ffebee; border: 1px solid #ffcdd2; color: #c62828; padding: 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.88rem; text-align: center;">
+                    <i class="fa-solid fa-circle-exclamation"></i> <span id="trackErrorText">No order found matching this Order ID or Phone number.</span>
+                </div>
+
+                <!-- Results Container Injected Dynamically -->
+                <div id="trackResultContainer" style="display: none;"></div>
             </div>
         </div>
     </div>
