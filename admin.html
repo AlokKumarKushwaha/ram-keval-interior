@@ -46,19 +46,19 @@
     <div id="adminDashboard" style="display: none;">
         <!-- Admin Top Navigation -->
         <header class="admin-header">
-            <div style="display: flex; align-items: center; gap: 14px;">
-                <img src="images/logo.jpg" alt="Ram Keval Interior Logo" style="height: 42px; width: auto; border-radius: 8px; background: #fff; padding: 2px;">
+            <div class="admin-header-brand">
+                <img src="images/logo.jpg" alt="Ram Keval Interior Logo" class="admin-header-logo">
                 <div>
-                    <h2 style="color: #fff; font-size: 1.25rem;">Ram Keval Interior <span style="font-size: 0.75rem; color: #d4a373; font-weight: normal; margin-left: 6px;">| Owner Dashboard</span></h2>
-                    <p style="font-size: 0.75rem; color: #e0d0c1;">Manage Furniture, Update Prices, Photos & View Customer Orders</p>
+                    <h2>Ram Keval Interior <span class="admin-header-sub">| Owner Dashboard</span></h2>
+                    <p class="admin-header-desc">Manage Furniture, Update Prices, Photos & View Customer Orders</p>
                 </div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <a href="index.html" target="_blank" class="btn btn-outline" style="background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.3); font-size: 0.82rem; padding: 6px 12px;">
+            <div class="admin-header-actions">
+                <a href="index.html" target="_blank" class="btn btn-outline admin-header-btn">
                     <i class="fa-solid fa-eye"></i> View Live Website
                 </a>
-                <button id="adminLogoutBtn" class="btn btn-outline" style="color: #ff9e80; border-color: rgba(255,255,255,0.2); font-size: 0.82rem; padding: 6px 12px;">
+                <button id="adminLogoutBtn" class="btn btn-outline admin-header-btn admin-logout-btn">
                     <i class="fa-solid fa-power-off"></i> Logout
                 </button>
             </div>
@@ -111,28 +111,32 @@
             <!-- Dashboard Navigation Tabs -->
             <div class="admin-nav-tabs">
                 <button class="admin-tab-btn active" data-tab="ordersTab">
-                    <i class="fa-solid fa-bell"></i> Customer Orders (<span id="tabOrderCount">0</span>)
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Customer Orders (<strong id="tabOrderCount">0</strong>)</span>
                 </button>
                 <button class="admin-tab-btn" data-tab="productsTab">
-                    <i class="fa-solid fa-boxes-stacked"></i> Furniture Inventory
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span>Furniture Inventory</span>
                 </button>
                 <button class="admin-tab-btn" data-tab="addProductTab">
-                    <i class="fa-solid fa-circle-plus"></i> Add New Furniture
+                    <i class="fa-solid fa-circle-plus"></i>
+                    <span>Add New Furniture</span>
                 </button>
                 <button class="admin-tab-btn" data-tab="settingsTab">
-                    <i class="fa-solid fa-sliders"></i> Settings & Backup
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Settings & Backup</span>
                 </button>
             </div>
 
             <!-- TAB 1: CUSTOMER ORDERS LIST -->
             <div id="ordersTab" class="tab-pane">
                 <div class="admin-panel-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                    <div class="admin-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                         <div>
                             <h3 style="font-size: 1.4rem;">Customer Orders Received</h3>
                             <p style="color: #777; font-size: 0.88rem;">Customers browse the catalog and place orders here. No online payment was charged.</p>
                         </div>
-                        <div style="display: flex; gap: 10px;">
+                        <div class="admin-section-actions" style="display: flex; gap: 10px;">
                             <select id="orderFilterStatus" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.85rem;">
                                 <option value="All">All Statuses</option>
                                 <option value="Pending">Pending (Unconfirmed)</option>
@@ -144,6 +148,11 @@
                                 <i class="fa-solid fa-rotate"></i> Refresh
                             </button>
                         </div>
+                    </div>
+
+                    <div class="mobile-table-hint">
+                        <i class="fa-solid fa-arrows-left-right"></i>
+                        <span>Scroll left/right to view customer phone, status & 1-click call/chat buttons (बाएँ-दाएँ स्वाइप करें)</span>
                     </div>
 
                     <div class="table-responsive">
@@ -170,14 +179,19 @@
             <!-- TAB 2: FURNITURE INVENTORY (EDIT & DELETE) -->
             <div id="productsTab" class="tab-pane" style="display: none;">
                 <div class="admin-panel-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                    <div class="admin-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                         <div>
                             <h3 style="font-size: 1.4rem;">Furniture Inventory Catalog</h3>
                             <p style="color: #777; font-size: 0.88rem;">You can edit photos, change prices, update wood details, or remove items at any time.</p>
                         </div>
-                        <button class="btn btn-primary" onclick="switchTab('addProductTab')" style="font-size: 0.85rem;">
+                        <button class="btn btn-primary admin-add-quick-btn" onclick="switchTab('addProductTab')" style="font-size: 0.85rem;">
                             <i class="fa-solid fa-plus"></i> Add New Furniture Item
                         </button>
+                    </div>
+
+                    <div class="mobile-table-hint">
+                        <i class="fa-solid fa-arrows-left-right"></i>
+                        <span>Scroll left/right to view prices & Edit/Delete buttons (बाएँ-दाएँ स्वाइप करें)</span>
                     </div>
 
                     <div class="table-responsive">
@@ -278,7 +292,7 @@
                             <textarea id="prodDescInput" rows="3" placeholder="Key highlights, storage space, foam density, warranty or craftsmanship details..."></textarea>
                         </div>
 
-                        <div style="display: flex; gap: 14px; margin-top: 24px;">
+                        <div class="admin-form-actions" style="display: flex; gap: 14px; margin-top: 24px;">
                             <button type="submit" class="btn btn-primary" style="flex: 1; padding: 14px;">
                                 <i class="fa-solid fa-floppy-disk"></i> Save & Publish Furniture
                             </button>
@@ -322,7 +336,7 @@
                             <input type="text" id="settingPin" style="letter-spacing: 2px;">
                         </div>
 
-                        <button type="submit" class="btn btn-primary" style="margin-bottom: 28px;">
+                        <button type="submit" class="btn btn-primary admin-submit-btn" style="margin-bottom: 28px;">
                             <i class="fa-solid fa-check"></i> Update Settings
                         </button>
                     </form>
@@ -332,7 +346,7 @@
                     <h4><i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Data Backup & Restore Safety</h4>
                     <p style="color: #777; font-size: 0.85rem; margin-bottom: 16px;">Download your full catalog and orders as a backup file anytime, or restore from a previously downloaded file.</p>
 
-                    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;">
+                    <div class="settings-backup-buttons" style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;">
                         <button id="exportDataBtn" class="btn btn-outline" style="background: #fff;">
                             <i class="fa-solid fa-download"></i> Download Backup (JSON)
                         </button>
