@@ -250,13 +250,40 @@ document.addEventListener("DOMContentLoaded", async () => {
             const waMsg = encodeURIComponent(`Namaste Ram Keval Interior! I am interested in: "${prod.title}" (NPR रू ${p.nprFormatted} / INR ₹ ${p.inrFormatted}). Can you share more details?`);
             const waLink = `https://wa.me/${settings.whatsapp}?text=${waMsg}`;
 
+            // Multi-Angle Selector Bar if product has multiple photos
+            let angleBarHtml = '';
+            if (prod.images && prod.images.length > 1) {
+                const anglePills = prod.images.map((imgUrl, aIdx) => {
+                    return `
+                        <button type="button" class="angle-thumb-pill" data-prodid="${prod.id}" data-imgsrc="${escapeHtml(imgUrl)}" title="View Angle ${aIdx + 1}">
+                            <img src="${escapeHtml(imgUrl)}" class="angle-pill-mini-img" alt="Angle ${aIdx + 1}" onerror="this.style.display='none'">
+                            <span>Angle ${aIdx + 1}</span>
+                        </button>
+                    `;
+                }).join("");
+
+                angleBarHtml = `
+                    <div class="prod-angle-bar" id="angleBar_${prod.id}">
+                        <span style="font-size: 0.7rem; font-weight: 700; color: #8b4513; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;">
+                            <i class="fa-solid fa-camera"></i> Angles (${prod.images.length}):
+                        </span>
+                        <button type="button" class="angle-thumb-pill active" data-prodid="${prod.id}" data-imgsrc="${escapeHtml(prod.image)}" title="View All Angles Collage">
+                            <i class="fa-solid fa-layer-group" style="font-size: 0.75rem;"></i>
+                            <span>All Angles</span>
+                        </button>
+                        ${anglePills}
+                    </div>
+                `;
+            }
+
             return `
                 <div class="product-card">
                     <div class="prod-img-box">
-                        <img src="${prod.image || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80'}" alt="${escapeHtml(prod.title)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80'">
+                        <img id="cardMainImg_${prod.id}" src="${prod.image || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80'}" alt="${escapeHtml(prod.title)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80'">
                         ${badgeHtml}
                         <span class="prod-category-tag">${escapeHtml(prod.category)}</span>
                     </div>
+                    ${angleBarHtml}
                     <div class="prod-details">
                         <h3 class="prod-title">${escapeHtml(prod.title)}</h3>
                         
@@ -295,6 +322,24 @@ document.addEventListener("DOMContentLoaded", async () => {
                 openOrderModal(prodId);
             });
         });
+
+        // Attach event listeners to angle switcher pills
+        document.querySelectorAll(".angle-thumb-pill").forEach(pill => {
+            pill.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const prodId = pill.getAttribute("data-prodid");
+                const imgSrc = pill.getAttribute("data-imgsrc");
+                const mainImg = document.getElementById(`cardMainImg_${prodId}`);
+                if (mainImg && imgSrc) {
+                    mainImg.src = imgSrc;
+                }
+                const parentBar = pill.closest(".prod-angle-bar");
+                if (parentBar) {
+                    parentBar.querySelectorAll(".angle-thumb-pill").forEach(p => p.classList.remove("active"));
+                    pill.classList.add("active");
+                }
+            });
+        });
     }
 
     // Open Order Modal for Selected Product
@@ -311,6 +356,38 @@ document.addEventListener("DOMContentLoaded", async () => {
         orderFurnitureTitle.value = prod.title;
         orderFurniturePrice.value = prod.price;
         orderQty.value = 1;
+
+        // Modal Angle Switcher
+        const modalAngleTray = document.getElementById("modalAngleTray");
+        const modalAnglePills = document.getElementById("modalAnglePills");
+        if (modalAngleTray && modalAnglePills) {
+            if (prod.images && prod.images.length > 1) {
+                const pillsHtml = `
+                    <button type="button" class="angle-thumb-pill active modal-angle-pill" data-src="${escapeHtml(prod.image)}">
+                        <i class="fa-solid fa-layer-group"></i> All Angles
+                    </button>
+                    ${prod.images.map((url, idx) => `
+                        <button type="button" class="angle-thumb-pill modal-angle-pill" data-src="${escapeHtml(url)}">
+                            <img src="${escapeHtml(url)}" class="angle-pill-mini-img" alt="Angle">
+                            Angle ${idx + 1}
+                        </button>
+                    `).join("")}
+                `;
+                modalAnglePills.innerHTML = pillsHtml;
+                modalAngleTray.style.display = "block";
+
+                modalAnglePills.querySelectorAll(".modal-angle-pill").forEach(pill => {
+                    pill.addEventListener("click", () => {
+                        modalThumb.src = pill.getAttribute("data-src");
+                        modalAnglePills.querySelectorAll(".modal-angle-pill").forEach(p => p.classList.remove("active"));
+                        pill.classList.add("active");
+                    });
+                });
+            } else {
+                modalAngleTray.style.display = "none";
+                modalAnglePills.innerHTML = "";
+            }
+        }
 
         updateOrderModalPrice();
 

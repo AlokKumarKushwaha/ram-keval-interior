@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const orderFilterStatus = document.getElementById("orderFilterStatus");
     const refreshOrdersBtn = document.getElementById("refreshOrdersBtn");
 
-    // Add Product Elements
+    // Add Product Elements & Multi-Angle Studio Composer
     const newProductForm = document.getElementById("newProductForm");
     const imageDropArea = document.getElementById("imageDropArea");
     const fileUploadInput = document.getElementById("fileUploadInput");
@@ -36,6 +36,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const previewHolder = document.getElementById("previewHolder");
     const imagePreviewImg = document.getElementById("imagePreviewImg");
     let currentUploadedBase64 = "";
+
+    // Multi-Angle Elements
+    let uploadedAngleImages = []; // Array of { id, dataUrl, name }
+    const angleTrayContainer = document.getElementById("angleTrayContainer");
+    const angleThumbnailsList = document.getElementById("angleThumbnailsList");
+    const angleCountBadge = document.getElementById("angleCountBadge");
+    const trayAngleCount = document.getElementById("trayAngleCount");
+    const addMoreAnglesBtn = document.getElementById("addMoreAnglesBtn");
+    const composerBar = document.getElementById("composerBar");
+    const collageLayoutSelect = document.getElementById("collageLayoutSelect");
+    const recomposeBtn = document.getElementById("recomposeBtn");
+    const previewResolutionBadge = document.getElementById("previewResolutionBadge");
 
     // Edit Product Modal Elements
     const editProductModal = document.getElementById("editProductModal");
@@ -387,24 +399,403 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // -------------------------------------------------------------
-    // TAB 3: ADD NEW PRODUCT (POST TO BACKEND WITH IMAGE UPLOAD)
+    // TAB 3: ADD NEW PRODUCT (MULTI-ANGLE UPLOAD & STUDIO COMPOSER)
     // -------------------------------------------------------------
+    function renderAngleThumbnails() {
+        if (!angleThumbnailsList) return;
+
+        const count = uploadedAngleImages.length;
+        if (angleCountBadge) {
+            angleCountBadge.textContent = `${count} Angle${count === 1 ? '' : 's'} Selected`;
+            angleCountBadge.style.background = count > 0 ? '#e8f5e9' : '#eef2f5';
+            angleCountBadge.style.color = count > 0 ? '#2e7d32' : '#475569';
+        }
+        if (trayAngleCount) {
+            trayAngleCount.textContent = count;
+        }
+
+        if (count === 0) {
+            if (angleTrayContainer) angleTrayContainer.style.display = "none";
+            if (composerBar) composerBar.style.display = "none";
+            if (previewHolder && (!prodImageUrlInput || !prodImageUrlInput.value.trim())) {
+                previewHolder.style.display = "none";
+            }
+            currentUploadedBase64 = prodImageUrlInput ? prodImageUrlInput.value.trim() : "";
+            return;
+        }
+
+        if (angleTrayContainer) angleTrayContainer.style.display = "block";
+        if (composerBar) composerBar.style.display = count > 1 ? "block" : "none";
+
+        const angleLabels = ["Angle 1 (Front)", "Angle 2 (Side)", "Angle 3 (Detail)", "Angle 4 (Perspective)", "Angle 5 (In-Room)", "Angle 6 (Back)"];
+
+        angleThumbnailsList.innerHTML = uploadedAngleImages.map((item, idx) => {
+            const label = angleLabels[idx] || `Angle ${idx + 1}`;
+            return `
+                <div class="angle-thumb-item" data-id="${item.id}">
+                    <button type="button" class="angle-thumb-del" data-id="${item.id}" title="Remove this angle">&times;</button>
+                    <div class="angle-thumb-img-wrapper">
+                        <img src="${item.dataUrl}" alt="Angle ${idx + 1}">
+                    </div>
+                    <div class="angle-thumb-label" title="${label}">${label}</div>
+                </div>
+            `;
+        }).join("");
+
+        // Attach individual remove handlers
+        angleThumbnailsList.querySelectorAll(".angle-thumb-del").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                const id = btn.getAttribute("data-id");
+                uploadedAngleImages = uploadedAngleImages.filter(item => item.id !== id);
+                renderAngleThumbnails();
+                await composeStudioCollage();
+            });
+        });
+    }
+
+    async function handleSelectedAngleFiles(files) {
+        if (!files || files.length === 0) return;
+
+        const fileArray = Array.from(files);
+        const readPromises = fileArray.map(file => {
+            return new Promise((resolve) => {
+                if (!file.type || !file.type.startsWith("image/")) {
+                    resolve(null);
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    resolve({
+                        id: "ang_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+                        dataUrl: e.target.result,
+                        name: file.name
+                    });
+                };
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(file);
+            });
+        });
+
+        const newItems = (await Promise.all(readPromises)).filter(Boolean);
+        uploadedAngleImages.push(...newItems);
+
+        renderAngleThumbnails();
+        await composeStudioCollage();
+    }
+
+    function drawCoverImage(ctx, img, x, y, w, h, radius = 10) {
+        ctx.save();
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(x, y, w, h, radius);
+        } else {
+            ctx.rect(x, y, w, h);
+        }
+        ctx.clip();
+
+        // Calculate aspect ratio fit (cover)
+        const nw = img.naturalWidth || img.width;
+        const nh = img.naturalHeight || img.height;
+        const imgAspect = nw / nh;
+        const boxAspect = w / h;
+        let sx, sy, sWidth, sHeight;
+
+        if (imgAspect > boxAspect) {
+            sHeight = nh;
+            sWidth = nh * boxAspect;
+            sx = (nw - sWidth) / 2;
+            sy = 0;
+        } else {
+            sWidth = nw;
+            sHeight = nw / boxAspect;
+            sx = 0;
+            sy = (nh - sHeight) / 2;
+        }
+
+        ctx.drawImage(img, sx, sy, sWidth, sHeight, x, y, w, h);
+        ctx.restore();
+
+        // Crisp frame border
+        ctx.save();
+        ctx.strokeStyle = "#e8dfd5";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(x, y, w, h, radius);
+        } else {
+            ctx.rect(x, y, w, h);
+        }
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function drawAngleTag(ctx, text, x, y) {
+        ctx.save();
+        ctx.font = "bold 13px 'Segoe UI', system-ui, sans-serif";
+        const metrics = ctx.measureText(text);
+        const padX = 10;
+        const tagW = metrics.width + padX * 2;
+        const tagH = 24;
+
+        ctx.fillStyle = "rgba(22, 17, 14, 0.84)";
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(x, y, tagW, tagH, 6);
+        } else {
+            ctx.rect(x, y, tagW, tagH);
+        }
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(text, x + padX, y + 17);
+        ctx.restore();
+    }
+
+    async function composeStudioCollage() {
+        const count = uploadedAngleImages.length;
+        if (count === 0) {
+            if (prodImageUrlInput && prodImageUrlInput.value.trim()) {
+                currentUploadedBase64 = prodImageUrlInput.value.trim();
+                if (imagePreviewImg) imagePreviewImg.src = currentUploadedBase64;
+                if (previewHolder) previewHolder.style.display = "block";
+            } else {
+                currentUploadedBase64 = "";
+                if (previewHolder) previewHolder.style.display = "none";
+            }
+            return;
+        }
+
+        if (count === 1) {
+            currentUploadedBase64 = uploadedAngleImages[0].dataUrl;
+            if (imagePreviewImg) imagePreviewImg.src = currentUploadedBase64;
+            if (previewResolutionBadge) previewResolutionBadge.textContent = "Single Angle View";
+            if (previewHolder) previewHolder.style.display = "block";
+            return;
+        }
+
+        // 2 or more angles: Compose with HTML5 Canvas Studio Engine
+        const selectedLayout = collageLayoutSelect ? collageLayoutSelect.value : "auto";
+        let layoutMode = selectedLayout;
+        if (layoutMode === "auto") {
+            if (count === 2) layoutMode = "split";
+            else if (count === 3) layoutMode = "hero";
+            else if (count === 4) layoutMode = "grid";
+            else layoutMode = "hero"; // 5+ angles
+        }
+
+        // Load all images asynchronously
+        const loadedImgs = await Promise.all(
+            uploadedAngleImages.map(item => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.crossOrigin = "anonymous";
+                    img.onload = () => resolve(img);
+                    img.onerror = () => resolve(null);
+                    img.src = item.dataUrl;
+                });
+            })
+        );
+
+        const validImgs = loadedImgs.filter(Boolean);
+        if (validImgs.length === 0) return;
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const W = 1200;
+        let H = 780;
+        const bannerH = 40;
+        const margin = 12;
+        const gap = 12;
+
+        if (layoutMode === "split") {
+            H = 720;
+            canvas.width = W;
+            canvas.height = H;
+
+            // Warm luxury slate studio background
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+            bgGrad.addColorStop(0, "#231b17");
+            bgGrad.addColorStop(1, "#18120f");
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            const contentH = H - bannerH - margin * 2;
+            const colW = (W - margin * 2 - gap) / 2;
+
+            drawCoverImage(ctx, validImgs[0], margin, margin, colW, contentH, 10);
+            drawAngleTag(ctx, "ANGLE 1 • FRONT VIEW", margin + 12, margin + 14);
+
+            drawCoverImage(ctx, validImgs[1], margin + colW + gap, margin, colW, contentH, 10);
+            drawAngleTag(ctx, "ANGLE 2 • SIDE / DETAIL", margin + colW + gap + 12, margin + 14);
+
+        } else if (layoutMode === "hero") {
+            H = count >= 5 ? 880 : 800;
+            canvas.width = W;
+            canvas.height = H;
+
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+            bgGrad.addColorStop(0, "#231b17");
+            bgGrad.addColorStop(1, "#18120f");
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            const contentH = H - bannerH - margin * 2;
+
+            if (count === 3 || validImgs.length === 3) {
+                const heroW = 730;
+                const sideW = W - margin * 2 - gap - heroW;
+                const sideH = (contentH - gap) / 2;
+
+                // Hero on Left
+                drawCoverImage(ctx, validImgs[0], margin, margin, heroW, contentH, 10);
+                drawAngleTag(ctx, "HERO • PRIMARY VIEW", margin + 12, margin + 14);
+
+                // Right Top
+                drawCoverImage(ctx, validImgs[1], margin + heroW + gap, margin, sideW, sideH, 10);
+                drawAngleTag(ctx, "ANGLE 2 • SIDE", margin + heroW + gap + 10, margin + 12);
+
+                // Right Bottom
+                drawCoverImage(ctx, validImgs[2], margin + heroW + gap, margin + sideH + gap, sideW, sideH, 10);
+                drawAngleTag(ctx, "ANGLE 3 • PERSPECTIVE", margin + heroW + gap + 10, margin + sideH + gap + 12);
+            } else {
+                // 4 or 5+ angles: Hero on Left + 2x2 grid on right
+                const heroW = 680;
+                const sideTotalW = W - margin * 2 - gap - heroW;
+                const subColW = (sideTotalW - gap) / 2;
+                const subRowH = (contentH - gap) / 2;
+
+                // Hero
+                drawCoverImage(ctx, validImgs[0], margin, margin, heroW, contentH, 10);
+                drawAngleTag(ctx, "HERO • MAIN VIEW", margin + 12, margin + 14);
+
+                // Angle 2
+                if (validImgs[1]) {
+                    drawCoverImage(ctx, validImgs[1], margin + heroW + gap, margin, subColW, subRowH, 8);
+                    drawAngleTag(ctx, "ANGLE 2", margin + heroW + gap + 8, margin + 10);
+                }
+                // Angle 3
+                if (validImgs[2]) {
+                    drawCoverImage(ctx, validImgs[2], margin + heroW + gap + subColW + gap, margin, subColW, subRowH, 8);
+                    drawAngleTag(ctx, "ANGLE 3", margin + heroW + gap + subColW + gap + 8, margin + 10);
+                }
+                // Angle 4
+                if (validImgs[3]) {
+                    drawCoverImage(ctx, validImgs[3], margin + heroW + gap, margin + subRowH + gap, subColW, subRowH, 8);
+                    drawAngleTag(ctx, "ANGLE 4", margin + heroW + gap + 8, margin + subRowH + gap + 10);
+                }
+                // Angle 5
+                if (validImgs[4]) {
+                    drawCoverImage(ctx, validImgs[4], margin + heroW + gap + subColW + gap, margin + subRowH + gap, subColW, subRowH, 8);
+                    const tag = validImgs.length > 5 ? `ANGLE 5 (+${validImgs.length - 5} More)` : "ANGLE 5";
+                    drawAngleTag(ctx, tag, margin + heroW + gap + subColW + gap + 8, margin + subRowH + gap + 10);
+                }
+            }
+
+        } else {
+            // "grid" layout (4 quadrants)
+            H = 840;
+            canvas.width = W;
+            canvas.height = H;
+
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+            bgGrad.addColorStop(0, "#231b17");
+            bgGrad.addColorStop(1, "#18120f");
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            const contentH = H - bannerH - margin * 2;
+            const colW = (W - margin * 2 - gap) / 2;
+            const rowH = (contentH - gap) / 2;
+
+            for (let i = 0; i < Math.min(4, validImgs.length); i++) {
+                const col = i % 2;
+                const row = Math.floor(i / 2);
+                const rx = margin + col * (colW + gap);
+                const ry = margin + row * (rowH + gap);
+
+                drawCoverImage(ctx, validImgs[i], rx, ry, colW, rowH, 10);
+                drawAngleTag(ctx, `ANGLE ${i + 1}`, rx + 12, ry + 12);
+            }
+        }
+
+        // Draw Studio Watermark Ribbon at Bottom
+        const ribbonY = H - bannerH - 4;
+        ctx.fillStyle = "rgba(18, 14, 11, 0.95)";
+        ctx.fillRect(0, ribbonY, W, bannerH + 4);
+
+        // Gold divider line
+        ctx.fillStyle = "#c5a059";
+        ctx.fillRect(0, ribbonY, W, 2);
+
+        // Studio brand watermark
+        ctx.font = "bold 13px 'Segoe UI', system-ui, sans-serif";
+        ctx.fillStyle = "#d4af37";
+        ctx.fillText("✦ RAM KEVAL INTERIOR", 18, ribbonY + 24);
+
+        ctx.font = "600 12px 'Segoe UI', system-ui, sans-serif";
+        ctx.fillStyle = "#e2d9cf";
+        ctx.fillText(`• MULTI-ANGLE SHOWROOM STUDIO (${count} ANGLES CAPTURED)`, 205, ribbonY + 24);
+
+        ctx.fillStyle = "#9e9184";
+        ctx.font = "11px 'Segoe UI', system-ui, sans-serif";
+        ctx.textAlign = "right";
+        ctx.fillText("HANDCRAFTED DURABILITY & BESPOKE PERFECTION", W - 18, ribbonY + 24);
+        ctx.textAlign = "left";
+
+        // Export Data URL
+        const compositeDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+        currentUploadedBase64 = compositeDataUrl;
+
+        if (imagePreviewImg) imagePreviewImg.src = compositeDataUrl;
+        if (previewResolutionBadge) previewResolutionBadge.textContent = `Custom Studio Collage (${count} Angles) • ${W}x${H}px`;
+        if (previewHolder) previewHolder.style.display = "block";
+        if (prodImageUrlInput) prodImageUrlInput.value = "";
+    }
+
     if (imageDropArea && fileUploadInput) {
         imageDropArea.addEventListener("click", () => fileUploadInput.click());
 
         fileUploadInput.addEventListener("change", (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                currentUploadedBase64 = evt.target.result;
-                imagePreviewImg.src = currentUploadedBase64;
-                previewHolder.style.display = "block";
-                prodImageUrlInput.value = "";
-            };
-            reader.readAsDataURL(file);
+            handleSelectedAngleFiles(e.target.files);
+            // Reset input value so same files can be re-selected if deleted
+            fileUploadInput.value = "";
         });
+
+        // Drag and drop support
+        imageDropArea.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            imageDropArea.style.borderColor = "var(--primary)";
+            imageDropArea.style.background = "#fbf5ee";
+        });
+        imageDropArea.addEventListener("dragleave", (e) => {
+            e.preventDefault();
+            imageDropArea.style.borderColor = "";
+            imageDropArea.style.background = "";
+        });
+        imageDropArea.addEventListener("drop", (e) => {
+            e.preventDefault();
+            imageDropArea.style.borderColor = "";
+            imageDropArea.style.background = "";
+            if (e.dataTransfer && e.dataTransfer.files) {
+                handleSelectedAngleFiles(e.dataTransfer.files);
+            }
+        });
+    }
+
+    if (addMoreAnglesBtn && fileUploadInput) {
+        addMoreAnglesBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            fileUploadInput.click();
+        });
+    }
+
+    if (collageLayoutSelect) {
+        collageLayoutSelect.addEventListener("change", () => composeStudioCollage());
+    }
+
+    if (recomposeBtn) {
+        recomposeBtn.addEventListener("click", () => composeStudioCollage());
     }
 
     if (prodImageUrlInput) {
@@ -412,8 +803,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const val = e.target.value.trim();
             if (val) {
                 currentUploadedBase64 = val;
-                imagePreviewImg.src = val;
-                previewHolder.style.display = "block";
+                if (imagePreviewImg) imagePreviewImg.src = val;
+                if (previewHolder) previewHolder.style.display = "block";
+                if (previewResolutionBadge) previewResolutionBadge.textContent = "Online Image URL";
             }
         });
     }
@@ -422,8 +814,9 @@ document.addEventListener("DOMContentLoaded", () => {
         newProductForm.addEventListener("submit", async (e) => {
             e.preventDefault();
 
+            const title = document.getElementById("prodTitleInput").value.trim();
             const payload = {
-                title: document.getElementById("prodTitleInput").value.trim(),
+                title: title,
                 category: document.getElementById("prodCategoryInput").value,
                 price: parseFloat(document.getElementById("prodPriceInput").value) || 0,
                 badge: document.getElementById("prodBadgeInput").value.trim(),
@@ -432,7 +825,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 finish: document.getElementById("prodFinishInput").value.trim(),
                 description: document.getElementById("prodDescInput").value.trim(),
                 imageBase64: currentUploadedBase64,
-                image: prodImageUrlInput.value.trim()
+                imagesBase64: uploadedAngleImages.map(item => item.dataUrl),
+                image: prodImageUrlInput ? prodImageUrlInput.value.trim() : ""
             };
 
             try {
@@ -442,7 +836,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: JSON.stringify(payload)
                 });
                 if (res.ok) {
-                    alert(`"${payload.title}" has been saved to the database and published live!`);
+                    alert(`"${payload.title}" has been saved with customized multi-angle photos and published live!`);
                 } else {
                     throw new Error("Server responded with error");
                 }
@@ -453,6 +847,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     id: "rk-" + Date.now().toString().slice(-5),
                     ...payload,
                     image: payload.imageBase64 || payload.image || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80",
+                    images: payload.imagesBase64 && payload.imagesBase64.length > 0 ? payload.imagesBase64 : [payload.imageBase64 || payload.image],
                     inStock: true
                 });
                 Storage.saveProducts(local);
@@ -461,7 +856,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             newProductForm.reset();
             currentUploadedBase64 = "";
-            previewHolder.style.display = "none";
+            uploadedAngleImages = [];
+            renderAngleThumbnails();
+            if (previewHolder) previewHolder.style.display = "none";
             await refreshAllData();
             switchTab("productsTab");
         });

@@ -2174,19 +2174,149 @@ img {
 }
 
 .image-preview-holder {
-    max-width: 140px;
-    max-height: 140px;
-    margin: 10px auto;
-    border-radius: 8px;
-    overflow: hidden;
+    width: 100%;
+    margin: 12px auto;
+    border-radius: 10px;
     display: none;
-    border: 2px solid var(--accent);
 }
 
 .image-preview-holder img {
     width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+/* Multi-Angle Upload Grid in Admin */
+.angle-thumbnails-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.angle-thumb-item {
+    position: relative;
+    background: #fff;
+    border: 2px solid #e0d5c7;
+    border-radius: 8px;
+    padding: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.angle-thumb-item:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary);
+}
+
+.angle-thumb-img-wrapper {
+    width: 100%;
+    height: 80px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #f4efe9;
+}
+
+.angle-thumb-img-wrapper img {
+    width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
+}
+
+.angle-thumb-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #555;
+    text-align: center;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.angle-thumb-del {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #e53935;
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    transition: background 0.2s, transform 0.2s;
+}
+
+.angle-thumb-del:hover {
+    background: #b71c1c;
+    transform: scale(1.15);
+}
+
+/* Storefront Angle Switcher Pills / Thumbnails */
+.prod-angle-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: #fbf8f5;
+    border-bottom: 1px solid #ebdcd0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.prod-angle-bar::-webkit-scrollbar {
+    height: 4px;
+}
+
+.prod-angle-bar::-webkit-scrollbar-thumb {
+    background: #d4c2b0;
+    border-radius: 4px;
+}
+
+.angle-thumb-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    background: #ffffff;
+    border: 1px solid #dcd4c8;
+    border-radius: 16px;
+    font-size: 0.73rem;
+    font-weight: 600;
+    color: #5d4037;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.angle-thumb-pill:hover {
+    background: #f5ede4;
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.angle-thumb-pill.active {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+    box-shadow: 0 2px 6px rgba(139, 69, 19, 0.25);
+}
+
+.angle-pill-mini-img {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
 /* ==========================================================================

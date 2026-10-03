@@ -299,6 +299,7 @@ const server = http.createServer(async (req, res) => {
             }
 
             let imagePath = body.image || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80';
+            const savedAngleImages = [];
 
             // If base64 photo is uploaded, save to disk
             if (body.imageBase64 && body.imageBase64.startsWith('data:image')) {
@@ -316,6 +317,30 @@ const server = http.createServer(async (req, res) => {
                 }
             }
 
+            // Save individual angle shots if provided in imagesBase64
+            if (Array.isArray(body.imagesBase64) && body.imagesBase64.length > 0) {
+                body.imagesBase64.forEach((b64, idx) => {
+                    if (b64 && b64.startsWith('data:image')) {
+                        try {
+                            const matches = b64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+                            if (matches && matches.length === 3) {
+                                const ext = matches[1].split('/')[1] || 'jpg';
+                                const filename = `angle_${Date.now()}_${idx}.${ext}`;
+                                const filePath = path.join(UPLOADS_DIR, filename);
+                                fs.writeFileSync(filePath, Buffer.from(matches[2], 'base64'));
+                                savedAngleImages.push(`/uploads/${filename}`);
+                            }
+                        } catch (err) {
+                            console.error('Failed to save angle shot:', err);
+                        }
+                    } else if (typeof b64 === 'string' && b64.startsWith('http')) {
+                        savedAngleImages.push(b64);
+                    }
+                });
+            } else if (Array.isArray(body.images) && body.images.length > 0) {
+                savedAngleImages.push(...body.images);
+            }
+
             const newProduct = {
                 id: 'rk-' + Date.now().toString().slice(-6),
                 title: body.title,
@@ -325,6 +350,7 @@ const server = http.createServer(async (req, res) => {
                 dimensions: body.dimensions || '',
                 finish: body.finish || '',
                 image: imagePath,
+                images: savedAngleImages.length > 0 ? savedAngleImages : [imagePath],
                 description: body.description || '',
                 badge: body.badge || 'Artisan Craft',
                 inStock: true,
@@ -352,6 +378,7 @@ const server = http.createServer(async (req, res) => {
         if (method === 'PUT') {
             const body = await parseBody(req);
             let updatedImage = body.image || products[index].image;
+            let updatedAngleImages = products[index].images || [];
 
             // Check if updated image is base64
             if (body.imageBase64 && body.imageBase64.startsWith('data:image')) {
@@ -368,6 +395,33 @@ const server = http.createServer(async (req, res) => {
                 }
             }
 
+            // Check if multiple angle images were updated
+            if (Array.isArray(body.imagesBase64) && body.imagesBase64.length > 0) {
+                const newAngles = [];
+                body.imagesBase64.forEach((b64, idx) => {
+                    if (b64 && b64.startsWith('data:image')) {
+                        try {
+                            const matches = b64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+                            if (matches && matches.length === 3) {
+                                const ext = matches[1].split('/')[1] || 'jpg';
+                                const filename = `angle_${Date.now()}_${idx}.${ext}`;
+                                fs.writeFileSync(path.join(UPLOADS_DIR, filename), Buffer.from(matches[2], 'base64'));
+                                newAngles.push(`/uploads/${filename}`);
+                            }
+                        } catch (err) {
+                            console.error('Angle update error:', err);
+                        }
+                    } else if (typeof b64 === 'string') {
+                        newAngles.push(b64);
+                    }
+                });
+                if (newAngles.length > 0) {
+                    updatedAngleImages = newAngles;
+                }
+            } else if (Array.isArray(body.images)) {
+                updatedAngleImages = body.images;
+            }
+
             products[index] = {
                 ...products[index],
                 title: body.title || products[index].title,
@@ -378,6 +432,7 @@ const server = http.createServer(async (req, res) => {
                 finish: body.finish || products[index].finish,
                 description: body.description || products[index].description,
                 image: updatedImage,
+                images: updatedAngleImages.length > 0 ? updatedAngleImages : [updatedImage],
                 inStock: body.inStock !== undefined ? body.inStock : products[index].inStock
             };
 

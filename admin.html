@@ -270,24 +270,76 @@
                             <input type="text" id="prodFinishInput" placeholder="e.g. Matte Melamine Walnut, High Gloss PU, Acrylic">
                         </div>
 
-                        <!-- Image Upload Drop Area -->
+                        <!-- Multi-Angle Image Upload Drop Area -->
                         <div class="form-group">
-                            <label><i class="fa-solid fa-camera"></i> Furniture Photo (Upload from Phone/PC or paste URL) *</label>
+                            <label style="display: flex; justify-content: space-between; align-items: center;">
+                                <span><i class="fa-solid fa-camera-retro" style="color: var(--primary);"></i> Furniture Photos (अलग-अलग एंगल की फोटो अपलोड करें) *</span>
+                                <span class="badge-tag" id="angleCountBadge" style="background: #eef2f5; color: #475569; font-size: 0.78rem; padding: 3px 8px; border-radius: 20px; font-weight: 600;">0 Angles Selected</span>
+                            </label>
                             
-                            <div class="image-drop-area" id="imageDropArea">
-                                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2.2rem; color: #8b4513; margin-bottom: 8px;"></i>
-                                <div style="font-weight: 600; font-size: 0.95rem;">Click to Select Photo from Computer / Phone</div>
-                                <div style="font-size: 0.78rem; color: #888;">Supports JPG, PNG, WEBP (stored directly)</div>
-                                <input type="file" id="fileUploadInput" accept="image/*" style="display: none;">
+                            <div class="image-drop-area multi-angle-drop-area" id="imageDropArea">
+                                <i class="fa-solid fa-layer-group" style="font-size: 2.2rem; color: #8b4513; margin-bottom: 8px;"></i>
+                                <div style="font-weight: 600; font-size: 1rem; color: #333;">Click or Drag Photos of Multiple Angles (Front, Side, Top, Detail)</div>
+                                <div style="font-size: 0.82rem; color: #666; margin-top: 4px;">
+                                    जितना मर्जी उतना फोटो अपलोड करें — हमारा स्टूडियो कंपोज़र अपने आप बेहतरीन multi-angle शोकेस फोटो बना देगा!
+                                </div>
+                                <div style="margin-top: 8px; font-size: 0.75rem; color: #999;">Supports multiple JPG, PNG, WEBP files</div>
+                                <input type="file" id="fileUploadInput" accept="image/*" multiple style="display: none;">
                             </div>
 
-                            <div style="margin: 12px 0 6px; text-align: center; color: #888; font-size: 0.82rem;">— OR ENTER ONLINE PHOTO URL —</div>
-                            <input type="url" id="prodImageUrlInput" placeholder="https://images.unsplash.com/... or paste image link">
+                            <!-- Uploaded Angles Tray (Thumbnails + Delete buttons) -->
+                            <div id="angleTrayContainer" style="display: none; margin-top: 14px; background: #fff8f0; border: 1px solid #ebdcd0; border-radius: 10px; padding: 12px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <span style="font-weight: 600; font-size: 0.88rem; color: #5a3e2b;">
+                                        <i class="fa-solid fa-images"></i> Uploaded Angles (<span id="trayAngleCount">0</span>)
+                                    </span>
+                                    <button type="button" id="addMoreAnglesBtn" class="btn btn-outline" style="font-size: 0.78rem; padding: 4px 10px; background: #fff;">
+                                        <i class="fa-solid fa-plus"></i> Add More Angle Photos
+                                    </button>
+                                </div>
+                                <div id="angleThumbnailsList" class="angle-thumbnails-grid">
+                                    <!-- Populated dynamically: thumbnail + remove button -->
+                                </div>
+                            </div>
+
+                            <!-- Studio Multi-Angle Composer Bar -->
+                            <div id="composerBar" style="display: none; margin-top: 14px; background: #fdfaf6; border: 1px solid #ebd9c8; border-radius: 10px; padding: 12px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                    <div style="font-size: 0.85rem; font-weight: 600; color: #8b4513;">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> Studio Multi-Angle Layout:
+                                    </div>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <select id="collageLayoutSelect" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.82rem; background: #fff;">
+                                            <option value="auto">✨ Auto Smart Studio (Recommended)</option>
+                                            <option value="split">📐 Side-by-Side (Split 50/50)</option>
+                                            <option value="hero">👑 1 Hero Shot + Angle Details</option>
+                                            <option value="grid">🔲 2x2 Clean Grid</option>
+                                        </select>
+                                        <button type="button" id="recomposeBtn" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.8rem; background: #fff;" title="Rebuild collage">
+                                            <i class="fa-solid fa-arrows-rotate"></i> Re-generate
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
 
                             <!-- Image Preview Holder -->
-                            <div class="image-preview-holder" id="previewHolder">
-                                <img src="" id="imagePreviewImg" alt="Selected Preview">
+                            <div class="image-preview-holder" id="previewHolder" style="margin-top: 14px; display: none;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <span style="font-size: 0.84rem; font-weight: 600; color: #2e7d32;">
+                                        <i class="fa-solid fa-circle-check"></i> Customized Multi-Angle Photo Ready for Publishing:
+                                    </span>
+                                    <span id="previewResolutionBadge" style="font-size: 0.74rem; background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 4px; font-weight: 600;">Studio HD 1200px</span>
+                                </div>
+                                <div class="customized-preview-card" style="border: 2px solid #8b4513; border-radius: 10px; overflow: hidden; background: #222; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                                    <img src="" id="imagePreviewImg" alt="Selected Preview" style="width: 100%; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+                                </div>
+                                <div style="font-size: 0.76rem; color: #777; margin-top: 6px; text-align: center;">
+                                    <i class="fa-solid fa-info-circle"></i> Yeh customized multi-angle photo website par main photo banegi, aur customer har angle ko alag se bhi click karke dekh payenge.
+                                </div>
                             </div>
+
+                            <div style="margin: 16px 0 6px; text-align: center; color: #888; font-size: 0.82rem;">— OR ENTER SINGLE PHOTO URL (OPTIONAL) —</div>
+                            <input type="url" id="prodImageUrlInput" placeholder="https://images.unsplash.com/... or paste image link">
                         </div>
 
                         <div class="form-group">
