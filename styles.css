@@ -301,6 +301,14 @@ img {
     align-items: center;
 }
 
+.hero-top-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
 .hero-badge {
     display: inline-flex;
     align-items: center;
@@ -312,7 +320,42 @@ img {
     font-size: 0.82rem;
     font-weight: 600;
     color: var(--primary-dark);
-    margin-bottom: 20px;
+}
+
+.hero-top-row .hero-badge {
+    margin-bottom: 0;
+}
+
+.hero-founder-circle-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    padding: 3px 12px 3px 4px;
+    border-radius: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border: 1.5px solid var(--accent);
+    cursor: default;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hero-founder-circle-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(139, 69, 19, 0.15);
+}
+
+.hero-founder-circle-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary);
+}
+
+.hero-founder-circle-text {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--primary-dark);
 }
 
 .hero-badge span.pulse-dot {
@@ -893,6 +936,56 @@ img {
 .dbc-wa-pill:hover {
     color: #1b5e20;
     background: #d4edda;
+}
+
+.dbc-call-pill {
+    color: #856404;
+    font-weight: 700;
+    background: #fff3cd;
+    border-color: #ffeeba;
+}
+
+.dbc-call-pill:hover {
+    color: #533f03;
+    background: #ffe8a1;
+    border-color: #d4a373;
+}
+
+.dbc-founder-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fdfaf6;
+    padding: 5px 12px 5px 5px;
+    border-radius: 28px;
+    border: 1.5px solid #ebdcd0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.dbc-founder-img {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary);
+}
+
+.dbc-founder-label {
+    display: flex;
+    flex-direction: column;
+}
+
+.dbc-f-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    line-height: 1.2;
+}
+
+.dbc-f-tag {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 500;
 }
 
 .card-caption-pill {
@@ -2075,10 +2168,24 @@ img {
     .hero-section {
         padding: 24px 0 40px;
     }
+    .hero-top-row {
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+    .hero-founder-circle-badge {
+        padding: 2px 10px 2px 3px;
+    }
+    .hero-founder-circle-img {
+        width: 30px;
+        height: 30px;
+    }
+    .hero-founder-circle-text {
+        font-size: 0.74rem;
+    }
     .hero-badge {
         font-size: 0.76rem;
         padding: 5px 12px;
-        margin-bottom: 14px;
+        margin-bottom: 0;
     }
     .hero-title {
         font-size: 2rem;

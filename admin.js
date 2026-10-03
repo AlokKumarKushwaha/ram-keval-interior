@@ -268,6 +268,9 @@ document.addEventListener("DOMContentLoaded", () => {
                             <a href="${waLink}" target="_blank" class="btn btn-outline" style="padding: 6px 10px; font-size: 0.8rem; color: #25d366;" title="WhatsApp Customer">
                                 <i class="fa-brands fa-whatsapp"></i> Chat
                             </a>
+                            <button class="btn btn-outline delete-order-btn" data-id="${o.orderId}" style="padding: 6px 10px; font-size: 0.8rem; color: #d32f2f; border-color: #ffcdd2;" title="Delete Order / आर्डर हटाएं">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -295,6 +298,31 @@ document.addEventListener("DOMContentLoaded", () => {
                         Storage.saveOrders(localOrders);
                     }
                 }
+                await refreshAllData();
+            });
+        });
+
+        // Delete order handlers (DELETE to backend)
+        document.querySelectorAll(".delete-order-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const orderId = btn.getAttribute("data-id");
+                if (!confirm(`Are you sure you want to permanently delete order #${orderId}?\nक्या आप यह आर्डर रिकॉर्ड डिलीट करना चाहते हैं?`)) {
+                    return;
+                }
+
+                try {
+                    await fetch(`/api/orders/${orderId}`, {
+                        method: "DELETE"
+                    });
+                } catch (e) {
+                    console.error("Delete order backend error:", e);
+                }
+
+                // Update LocalStorage fallback
+                const localOrders = Storage.getOrders();
+                const filtered = localOrders.filter(o => o.orderId !== orderId);
+                Storage.saveOrders(filtered);
+
                 await refreshAllData();
             });
         });

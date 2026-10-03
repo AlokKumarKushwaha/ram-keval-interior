@@ -485,6 +485,21 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 200, { success: true, order });
     }
 
+    // Delete Order by ID (DELETE /api/orders/:orderId)
+    if (pathname.startsWith('/api/orders/') && !pathname.endsWith('/status') && method === 'DELETE') {
+        const orderId = pathname.split('/')[3];
+        const orders = readJSON(ORDERS_FILE, DEFAULT_ORDERS);
+        const index = orders.findIndex(o => o.orderId === orderId);
+
+        if (index === -1) {
+            return sendJSON(res, 404, { error: 'Order not found' });
+        }
+
+        const deleted = orders.splice(index, 1)[0];
+        writeJSON(ORDERS_FILE, orders);
+        return sendJSON(res, 200, { success: true, message: 'Order deleted successfully', deleted });
+    }
+
     // 4. Stats Summary
     if (pathname === '/api/stats' && method === 'GET') {
         const products = readJSON(PRODUCTS_FILE, DEFAULT_PRODUCTS);
