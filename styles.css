@@ -329,33 +329,28 @@ img {
 .hero-founder-circle-badge {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
     background: #fff;
-    padding: 3px 12px 3px 4px;
-    border-radius: 30px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-    border: 1.5px solid var(--accent);
+    padding: 3px;
+    border-radius: 50%;
+    box-shadow: 0 4px 14px rgba(139, 69, 19, 0.18);
+    border: 2px solid var(--accent);
     cursor: default;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .hero-founder-circle-badge:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(139, 69, 19, 0.15);
+    transform: scale(1.08);
+    box-shadow: 0 6px 18px rgba(139, 69, 19, 0.25);
 }
 
 .hero-founder-circle-img {
-    width: 36px;
-    height: 36px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--primary);
-}
-
-.hero-founder-circle-text {
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--primary-dark);
+    display: block;
 }
 
 .hero-badge span.pulse-dot {
@@ -899,11 +894,27 @@ img {
 /* Footer contacts */
 .dbc-footer {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 10px;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
     position: relative;
     z-index: 1;
+}
+
+.dbc-socials-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.dbc-phones-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
 }
 
 .dbc-contact-link {
@@ -914,7 +925,7 @@ img {
     color: var(--text-main);
     font-weight: 500;
     background: #fdfaf6;
-    padding: 5px 10px;
+    padding: 6px 12px;
     border-radius: 6px;
     border: 1px solid #ebdcd0;
     transition: var(--transition);
@@ -930,12 +941,17 @@ img {
     color: #1e7e34;
     font-weight: 700;
     background: #e8f5e9;
-    border-color: #c8e6c9;
+    border-color: #a5d6a7;
+    font-size: 0.85rem;
+    padding: 7px 16px;
+    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.12);
 }
 
 .dbc-wa-pill:hover {
     color: #1b5e20;
-    background: #d4edda;
+    background: #c8e6c9;
+    border-color: #81c784;
+    transform: translateY(-1px);
 }
 
 .dbc-call-pill {
@@ -951,41 +967,35 @@ img {
     border-color: #d4a373;
 }
 
-.dbc-founder-badge {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #fdfaf6;
-    padding: 5px 12px 5px 5px;
-    border-radius: 28px;
-    border: 1.5px solid #ebdcd0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-
-.dbc-founder-img {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid var(--primary);
-}
-
-.dbc-founder-label {
+.dbc-founder-portrait {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-align: center;
 }
 
-.dbc-f-name {
-    font-size: 0.88rem;
-    font-weight: 700;
+.dbc-founder-photo {
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary);
+    box-shadow: 0 4px 14px rgba(139, 69, 19, 0.2);
+    transition: transform 0.25s ease;
+}
+
+.dbc-founder-photo:hover {
+    transform: scale(1.05);
+}
+
+.dbc-founder-name-below {
+    font-size: 0.95rem;
+    font-weight: 800;
     color: var(--primary-dark);
-    line-height: 1.2;
-}
-
-.dbc-f-tag {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    font-weight: 500;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
 }
 
 .card-caption-pill {
@@ -2173,14 +2183,11 @@ img {
         margin-bottom: 14px;
     }
     .hero-founder-circle-badge {
-        padding: 2px 10px 2px 3px;
+        padding: 3px;
     }
     .hero-founder-circle-img {
-        width: 30px;
-        height: 30px;
-    }
-    .hero-founder-circle-text {
-        font-size: 0.74rem;
+        width: 44px;
+        height: 44px;
     }
     .hero-badge {
         font-size: 0.76rem;
@@ -2246,19 +2253,38 @@ img {
     }
     .dbc-header {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+        align-items: center;
+        gap: 14px;
+        text-align: center;
+    }
+    .dbc-brand {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+    }
+    .dbc-founder-portrait {
+        margin: 4px 0;
+    }
+    .dbc-founder-photo {
+        width: 72px;
+        height: 72px;
+    }
+    .dbc-founder-name-below {
+        font-size: 0.92rem;
     }
     .dbc-name {
         font-size: 1.35rem;
     }
     .dbc-vignette-grid {
         width: 100%;
-        justify-content: flex-start;
+        justify-content: center;
     }
     .dbc-vignette {
         width: 50px;
         height: 62px;
+    }
+    .dbc-phones-group {
+        gap: 8px;
     }
     .dbc-services-row {
         grid-template-columns: repeat(2, 1fr);
