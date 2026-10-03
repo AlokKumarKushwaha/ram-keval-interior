@@ -172,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const pendingCount = orders.filter(o => o.status === "Pending").length;
             statPendingOrders.textContent = pendingCount;
             const totalValue = orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
-            statTotalValue.textContent = `${settings.currencySymbol || 'Rs.'} ${totalValue.toLocaleString("en-IN")}`;
+            statTotalValue.textContent = `NPR रू ${Math.round(totalValue * 1.6).toLocaleString("en-IN")} (≈ ₹ ${totalValue.toLocaleString("en-IN")})`;
         }
 
         renderOrdersTable();
@@ -249,7 +249,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     </td>
                     <td>
                         <div>Qty: <strong>${o.quantity || 1}</strong></div>
-                        <div style="font-weight: 800; color: #8b4513;">${settings.currencySymbol || 'Rs.'} ${Number(o.totalAmount || 0).toLocaleString("en-IN")}</div>
+                        <div style="font-weight: 800; color: #8b4513;">NPR रू ${Math.round((Number(o.totalAmount || 0)) * 1.6).toLocaleString("en-IN")}</div>
+                        <div style="font-size: 0.76rem; color: #666;">(₹ ${Number(o.totalAmount || 0).toLocaleString("en-IN")} INR)</div>
                         <span style="font-size: 0.72rem; color: #2e7d32; font-weight: 600;">Pay on Delivery</span>
                     </td>
                     <td>

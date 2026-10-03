@@ -23,11 +23,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     const modalThumb = document.getElementById("modalThumb");
     const modalProdTitle = document.getElementById("modalProdTitle");
     const modalProdPrice = document.getElementById("modalProdPrice");
+    const modalProdSubPrice = document.getElementById("modalProdSubPrice");
     const modalProdSpecs = document.getElementById("modalProdSpecs");
     const orderFurnitureId = document.getElementById("orderFurnitureId");
     const orderFurnitureTitle = document.getElementById("orderFurnitureTitle");
     const orderFurniturePrice = document.getElementById("orderFurniturePrice");
     const orderQty = document.getElementById("orderQty");
+    const custCitySelect = document.getElementById("custCity");
+
+    // Dual Currency State (Nepal NPR & India INR)
+    // 1 INR = 1.60 NPR (Fixed Nepal Exchange Peg)
+    const NPR_PER_INR = 1.6;
+    let currentCurrency = localStorage.getItem("rki_selected_currency") || "NPR";
+
+    function getFormattedPrices(baseInrPrice) {
+        const inr = Number(baseInrPrice) || 0;
+        const npr = Math.round(inr * NPR_PER_INR);
+        return {
+            inr: inr,
+            npr: npr,
+            inrFormatted: inr.toLocaleString("en-IN"),
+            nprFormatted: npr.toLocaleString("en-IN"),
+            primaryLabel: currentCurrency === "NPR" ? "Nepal Price (NPR)" : "India Price (INR)",
+            primaryText: currentCurrency === "NPR" ? `रू ${npr.toLocaleString("en-IN")}` : `₹ ${inr.toLocaleString("en-IN")}`,
+            secondaryText: currentCurrency === "NPR" ? `≈ ₹ ${inr.toLocaleString("en-IN")} INR (India)` : `≈ रू ${npr.toLocaleString("en-IN")} NPR (Nepal)`
+        };
+    }
 
     // Success Modal Elements
     const successModal = document.getElementById("successModal");
@@ -70,6 +91,85 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
+    // Setup Currency Switcher Controls
+    const btnCurrNPR = document.getElementById("btnCurrNPR");
+    const btnCurrINR = document.getElementById("btnCurrINR");
+
+    function setCurrency(curr) {
+        currentCurrency = curr;
+        localStorage.setItem("rki_selected_currency", curr);
+        if (btnCurrNPR && btnCurrINR) {
+            if (curr === "NPR") {
+                btnCurrNPR.classList.add("active");
+                btnCurrINR.classList.remove("active");
+            } else {
+                btnCurrINR.classList.add("active");
+                btnCurrNPR.classList.remove("active");
+            }
+        }
+        renderProducts();
+        if (selectedProductForOrder) {
+            updateOrderModalPrice();
+        }
+    }
+
+    if (btnCurrNPR) {
+        btnCurrNPR.addEventListener("click", () => setCurrency("NPR"));
+    }
+    if (btnCurrINR) {
+        btnCurrINR.addEventListener("click", () => setCurrency("INR"));
+    }
+
+    // Initialize toggle state on page load
+    if (btnCurrNPR && btnCurrINR) {
+        if (currentCurrency === "INR") {
+            btnCurrINR.classList.add("active");
+            btnCurrNPR.classList.remove("active");
+        } else {
+            btnCurrNPR.classList.add("active");
+            btnCurrINR.classList.remove("active");
+        }
+    }
+
+    // Modal Price & Currency Auto-Updater
+    function updateOrderModalPrice() {
+        if (!selectedProductForOrder) return;
+        const qty = parseInt(orderQty ? orderQty.value : 1, 10) || 1;
+        const p = getFormattedPrices(selectedProductForOrder.price * qty);
+        if (modalProdPrice) {
+            modalProdPrice.textContent = `${p.primaryText} (${currentCurrency})`;
+        }
+        if (modalProdSubPrice) {
+            modalProdSubPrice.textContent = p.secondaryText;
+        }
+    }
+
+    if (custCitySelect) {
+        custCitySelect.addEventListener("change", () => {
+            const val = custCitySelect.value;
+            if (val.includes("Nepal")) {
+                currentCurrency = "NPR";
+                if (btnCurrNPR && btnCurrINR) {
+                    btnCurrNPR.classList.add("active");
+                    btnCurrINR.classList.remove("active");
+                }
+            } else if (val.includes("India")) {
+                currentCurrency = "INR";
+                if (btnCurrNPR && btnCurrINR) {
+                    btnCurrINR.classList.add("active");
+                    btnCurrNPR.classList.remove("active");
+                }
+            }
+            localStorage.setItem("rki_selected_currency", currentCurrency);
+            updateOrderModalPrice();
+            renderProducts();
+        });
+    }
+
+    if (orderQty) {
+        orderQty.addEventListener("input", updateOrderModalPrice);
+    }
+
     // Setup Category Tabs
     if (categoryTabs) {
         categoryTabs.addEventListener("click", (e) => {
@@ -93,7 +193,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Mobile Navigation Toggle
-    // Mobile Navigation Toggle
     if (mobileMenuBtn && navLinks) {
         mobileMenuBtn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -115,7 +214,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // Render Product Cards
+    // Render Product Cards with Dual Currency (Nepal NPR & India INR)
     function renderProducts() {
         if (!productsContainer) return;
 
@@ -141,10 +240,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         productsContainer.innerHTML = filtered.map(prod => {
-            const formattedPrice = Number(prod.price).toLocaleString("en-IN");
+            const p = getFormattedPrices(prod.price);
             const badgeHtml = prod.badge ? `<span class="prod-badge">${escapeHtml(prod.badge)}</span>` : '';
             
-            const waMsg = encodeURIComponent(`Namaste Ram Keval Interior! I am interested in: "${prod.title}" (${settings.currencySymbol} ${formattedPrice}). Can you share more details?`);
+            const waMsg = encodeURIComponent(`Namaste Ram Keval Interior! I am interested in: "${prod.title}" (NPR रू ${p.nprFormatted} / INR ₹ ${p.inrFormatted}). Can you share more details?`);
             const waLink = `https://wa.me/${settings.whatsapp}?text=${waMsg}`;
 
             return `
@@ -167,8 +266,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                         <div class="prod-footer">
                             <div class="prod-price-box">
-                                <span class="price-label">Transparent Price</span>
-                                <span class="prod-price">${settings.currencySymbol} ${formattedPrice}</span>
+                                <span class="price-label">${p.primaryLabel}</span>
+                                <span class="prod-price">${p.primaryText}</span>
+                                <span class="prod-equiv-price">${p.secondaryText}</span>
                             </div>
                             <div class="order-btn-group">
                                 <button class="btn btn-order-now order-trigger-btn" data-id="${prod.id}">
@@ -201,13 +301,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         selectedProductForOrder = prod;
         modalThumb.src = prod.image || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80';
         modalProdTitle.textContent = prod.title;
-        modalProdPrice.textContent = `${settings.currencySymbol} ${Number(prod.price).toLocaleString("en-IN")}`;
         modalProdSpecs.textContent = `Wood: ${prod.woodType || 'Solid Wood'} | Category: ${prod.category}`;
 
         orderFurnitureId.value = prod.id;
         orderFurnitureTitle.value = prod.title;
         orderFurniturePrice.value = prod.price;
         orderQty.value = 1;
+
+        updateOrderModalPrice();
 
         orderModal.classList.add("active");
         document.body.style.overflow = "hidden";
@@ -292,18 +393,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Close order modal
             closeOrderModal();
 
+            const totalNPR = Math.round(total * NPR_PER_INR);
+            const waPriceLine = city.includes("Nepal") || currentCurrency === "NPR" 
+                ? `*Total Price:* NPR रू ${totalNPR.toLocaleString("en-IN")} (≈ INR ₹ ${total.toLocaleString("en-IN")})\n`
+                : `*Total Price:* INR ₹ ${total.toLocaleString("en-IN")} (≈ NPR रू ${totalNPR.toLocaleString("en-IN")})\n`;
+
             // WhatsApp link with order details
             const waText = encodeURIComponent(
                 `*New Furniture Order #${generatedOrderId}*\n` +
                 `------------------------------------\n` +
                 `*Item:* ${orderFurnitureTitle.value}\n` +
                 `*Qty:* ${qty}\n` +
-                `*Total Price:* ${settings.currencySymbol} ${total.toLocaleString("en-IN")}\n` +
+                waPriceLine +
+                `*Location / Branch:* ${city}\n` +
                 `*Payment:* Pay on Delivery / Direct Confirmation\n\n` +
                 `*Customer Details:*\n` +
                 `*Name:* ${name}\n` +
                 `*Phone:* ${phone}\n` +
-                `*City:* ${city}\n` +
                 `*Address:* ${address}\n` +
                 (notes ? `*Special Request:* ${notes}\n` : "") +
                 `------------------------------------\n` +
@@ -319,7 +425,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             successOrderIdDisplay.textContent = generatedOrderId;
             successName.textContent = `${name} (${phone})`;
             successItem.textContent = `${orderFurnitureTitle.value} (Qty: ${qty})`;
-            successTotal.textContent = `${settings.currencySymbol} ${total.toLocaleString("en-IN")}`;
+            successTotal.textContent = `NPR रू ${totalNPR.toLocaleString("en-IN")} (≈ ₹ ${total.toLocaleString("en-IN")} INR)`;
             sendWaOrderBtn.href = waDirectUrl;
 
             successModal.classList.add("active");
@@ -593,7 +699,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         </div>
                         <div class="track-item-info" style="flex: 1;">
                             <h5>${escapeHtml(order.furnitureTitle)}</h5>
-                            <p><strong>Quantity:</strong> ${order.quantity || 1} • <strong>Total:</strong> ${settings.currencySymbol || 'Rs.'} ${Number(order.totalAmount || order.furniturePrice || 0).toLocaleString("en-IN")}</p>
+                            <p><strong>Quantity:</strong> ${order.quantity || 1} • <strong>Total:</strong> NPR रू ${(Math.round(Number(order.totalAmount || order.furniturePrice || 0) * NPR_PER_INR)).toLocaleString("en-IN")} <span style="font-size: 0.78rem; color: #888;">(≈ ₹ ${Number(order.totalAmount || order.furniturePrice || 0).toLocaleString("en-IN")} INR)</span></p>
                             <p style="font-size: 0.76rem; color: #777;">
                                 <i class="fa-solid fa-location-dot"></i> Delivery to: ${escapeHtml(order.customerCity || '')} (${escapeHtml(order.customerAddress || 'Customer Address')})
                             </p>

@@ -420,6 +420,26 @@
                 <p>Browse our handcrafted designs with transparent prices. Click <strong>"Order Now"</strong> to book directly without any online payment.</p>
             </div>
 
+            <!-- Dual Currency Switcher for Nepal (Main Hub) & India (Sub Branches) -->
+            <div class="catalog-currency-bar">
+                <div class="curr-bar-left">
+                    <span class="curr-bar-title"><i class="fa-solid fa-coins"></i> <strong>Currency / मुद्रा:</strong></span>
+                    <div class="currency-toggle-pills" id="currencyTogglePills">
+                        <button type="button" class="curr-pill active" data-currency="NPR" id="btnCurrNPR" title="Nepal Rupee (Kathmandu Main Hub)">
+                            <span class="curr-flag">🇳🇵</span> <strong>NPR (रू)</strong> <span class="curr-sub">Nepal Hub</span>
+                        </button>
+                        <button type="button" class="curr-pill" data-currency="INR" id="btnCurrINR" title="Indian Rupee (India Branches)">
+                            <span class="curr-flag">🇮🇳</span> <strong>INR (₹)</strong> <span class="curr-sub">India Branches</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="curr-bar-right">
+                    <span class="curr-peg-badge">
+                        <i class="fa-solid fa-arrows-rotate"></i> <strong>Official Nepal Peg:</strong> 1 INR (₹) = 1.60 NPR (रू)
+                    </span>
+                </div>
+            </div>
+
             <!-- Catalog Filter Controls -->
             <div class="catalog-controls">
                 <div class="category-tabs" id="categoryTabs">
@@ -458,7 +478,10 @@
                     <img src="" alt="Furniture" class="summary-thumb" id="modalThumb">
                     <div class="summary-text">
                         <h4 id="modalProdTitle">Product Title</h4>
-                        <span class="summary-price" id="modalProdPrice">Rs. 0</span>
+                        <div class="summary-prices-row">
+                            <span class="summary-price" id="modalProdPrice">NPR रू 0</span>
+                            <span class="summary-subprice" id="modalProdSubPrice">≈ ₹ 0 INR</span>
+                        </div>
                         <div style="font-size: 0.78rem; color: #777;" id="modalProdSpecs">Wood: Teak</div>
                     </div>
                 </div>
@@ -493,11 +516,11 @@
                         <div class="form-group">
                             <label for="custCity"><i class="fa-solid fa-city"></i> Select City / Location *</label>
                             <select id="custCity" required>
-                                <option value="Kathmandu, Nepal">Kathmandu, Nepal</option>
-                                <option value="Hyderabad">Hyderabad</option>
-                                <option value="Gorakhpur">Gorakhpur</option>
-                                <option value="Lucknow">Lucknow</option>
-                                <option value="Other">Other City / Location</option>
+                                <option value="Kathmandu, Nepal" selected>Kathmandu, Nepal (Main Hub - NPR रू)</option>
+                                <option value="Hyderabad, India">Hyderabad (India - INR ₹)</option>
+                                <option value="Gorakhpur, India">Gorakhpur (India - INR ₹)</option>
+                                <option value="Lucknow, India">Lucknow (India - INR ₹)</option>
+                                <option value="Other Location">Other Location</option>
                             </select>
                         </div>
                         <div class="form-group">
