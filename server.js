@@ -205,6 +205,117 @@ function writeJSON(file, data) {
     fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
 }
 
+// Cloud Persistence: Commit to GitHub Repository if GITHUB_TOKEN is configured
+async function syncToGitHub(products) {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) return;
+
+    try {
+        const repo = process.env.GITHUB_REPO || 'AlokKumarKushwaha/ram-keval-interior';
+        const filePath = 'database/products.json';
+        const url = `https://api.github.com/repos/${repo}/contents/${filePath}`;
+
+        let sha = null;
+        try {
+            const getRes = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'User-Agent': 'RamKevalInterior-Server'
+                }
+            });
+            if (getRes.ok) {
+                const getData = await getRes.json();
+                sha = getData.sha;
+            }
+        } catch (e) {
+            console.warn('Could not fetch existing GitHub file SHA:', e.message);
+        }
+
+        // Clean products for Git commit (avoid huge base64 in repo if image files exist)
+        const cleanProds = products.map(p => {
+            const clone = { ...p };
+            // If image is a local upload path, keep it; if only base64, keep it
+            return clone;
+        });
+
+        const contentStr = JSON.stringify(cleanProds, null, 2);
+        const contentBase64 = Buffer.from(contentStr).toString('base64');
+
+        const putRes = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'RamKevalInterior-Server',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: 'Auto-sync furniture catalog from website [skip ci]',
+                content: contentBase64,
+                sha: sha || undefined,
+                branch: 'main'
+            })
+        });
+
+        if (putRes.ok) {
+            console.log('✅ Successfully committed products to GitHub repository!');
+        } else {
+            const errText = await putRes.text();
+            console.error('GitHub API error:', putRes.status, errText);
+        }
+    } catch (err) {
+        console.error('Error syncing products to GitHub:', err);
+    }
+}
+
+async function syncOrdersToGitHub(orders) {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) return;
+
+    try {
+        const repo = process.env.GITHUB_REPO || 'AlokKumarKushwaha/ram-keval-interior';
+        const filePath = 'database/orders.json';
+        const url = `https://api.github.com/repos/${repo}/contents/${filePath}`;
+
+        let sha = null;
+        try {
+            const getRes = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'User-Agent': 'RamKevalInterior-Server'
+                }
+            });
+            if (getRes.ok) {
+                const getData = await getRes.json();
+                sha = getData.sha;
+            }
+        } catch (e) {}
+
+        const contentStr = JSON.stringify(orders, null, 2);
+        const contentBase64 = Buffer.from(contentStr).toString('base64');
+
+        await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'RamKevalInterior-Server',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: 'Auto-sync customer orders from website [skip ci]',
+                content: contentBase64,
+                sha: sha || undefined,
+                branch: 'main'
+            })
+        });
+    } catch (err) {
+        console.error('Error syncing orders to GitHub:', err);
+    }
+}
+
 // MIME Types Map
 const MIME_TYPES = {
     '.html': 'text/html; charset=UTF-8',
@@ -289,6 +400,24 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/products') {
         if (method === 'GET') {
             const products = readJSON(PRODUCTS_FILE, DEFAULT_PRODUCTS);
+
+            // Cloud Persistence Safeguard: If local uploads were wiped by Render restart,
+            // recreate the files from imageData automatically!
+            products.forEach(p => {
+                if (p.image && p.image.startsWith('/uploads/') && p.imageData && p.imageData.startsWith('data:image')) {
+                    const filename = path.basename(p.image);
+                    const fp = path.join(UPLOADS_DIR, filename);
+                    if (!fs.existsSync(fp)) {
+                        try {
+                            const m = p.imageData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+                            if (m && m.length === 3) {
+                                fs.writeFileSync(fp, Buffer.from(m[2], 'base64'));
+                            }
+                        } catch (e) {}
+                    }
+                }
+            });
+
             return sendJSON(res, 200, products);
         }
 
@@ -342,7 +471,7 @@ const server = http.createServer(async (req, res) => {
             }
 
             const newProduct = {
-                id: 'rk-' + Date.now().toString().slice(-6),
+                id: body.id || ('rk-' + Date.now().toString().slice(-6)),
                 title: body.title,
                 category: body.category || 'Custom Furniture',
                 price: Number(body.price) || 0,
@@ -350,7 +479,9 @@ const server = http.createServer(async (req, res) => {
                 dimensions: body.dimensions || '',
                 finish: body.finish || '',
                 image: imagePath,
+                imageData: (body.imageBase64 && body.imageBase64.startsWith('data:image')) ? body.imageBase64 : (body.imageData || ''),
                 images: savedAngleImages.length > 0 ? savedAngleImages : [imagePath],
+                imagesData: (Array.isArray(body.imagesBase64) && body.imagesBase64.length > 0) ? body.imagesBase64 : (body.imagesData || []),
                 description: body.description || '',
                 badge: body.badge || 'Artisan Craft',
                 inStock: true,
@@ -358,11 +489,68 @@ const server = http.createServer(async (req, res) => {
             };
 
             const products = readJSON(PRODUCTS_FILE, DEFAULT_PRODUCTS);
-            products.unshift(newProduct);
+            // Replace if ID already exists, otherwise unshift
+            const existingIdx = products.findIndex(p => p.id === newProduct.id);
+            if (existingIdx >= 0) {
+                products[existingIdx] = newProduct;
+            } else {
+                products.unshift(newProduct);
+            }
+
             writeJSON(PRODUCTS_FILE, products);
+            syncToGitHub(products);
 
             return sendJSON(res, 201, { success: true, product: newProduct });
         }
+    }
+
+    // Batch Products Sync (Re-hydration Endpoint from LocalStorage)
+    if (pathname === '/api/products/sync' && method === 'POST') {
+        const body = await parseBody(req);
+        const incoming = Array.isArray(body.products) ? body.products : [];
+        if (incoming.length === 0) {
+            return sendJSON(res, 200, { success: true, count: 0 });
+        }
+
+        const products = readJSON(PRODUCTS_FILE, DEFAULT_PRODUCTS);
+        let addedCount = 0;
+
+        incoming.forEach(inc => {
+            if (!inc.id || !inc.title) return;
+            const idx = products.findIndex(p => p.id === inc.id);
+
+            // Re-create image file in /uploads/ if imageData base64 exists
+            let finalImage = inc.image;
+            if (inc.imageData && inc.imageData.startsWith('data:image')) {
+                try {
+                    const m = inc.imageData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+                    if (m && m.length === 3) {
+                        const ext = m[1].split('/')[1] || 'jpg';
+                        const filename = `furniture_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
+                        fs.writeFileSync(path.join(UPLOADS_DIR, filename), Buffer.from(m[2], 'base64'));
+                        finalImage = `/uploads/${filename}`;
+                    }
+                } catch (e) {}
+            }
+
+            const itemToSave = {
+                ...inc,
+                image: finalImage || inc.image,
+                imageData: inc.imageData || '',
+                images: inc.images || [finalImage || inc.image]
+            };
+
+            if (idx >= 0) {
+                products[idx] = itemToSave;
+            } else {
+                products.unshift(itemToSave);
+                addedCount++;
+            }
+        });
+
+        writeJSON(PRODUCTS_FILE, products);
+        syncToGitHub(products);
+        return sendJSON(res, 200, { success: true, count: addedCount, total: products.length });
     }
 
     // Product by ID (PUT / DELETE)
@@ -378,6 +566,7 @@ const server = http.createServer(async (req, res) => {
         if (method === 'PUT') {
             const body = await parseBody(req);
             let updatedImage = body.image || products[index].image;
+            let updatedImageData = products[index].imageData || '';
             let updatedAngleImages = products[index].images || [];
 
             // Check if updated image is base64
@@ -389,6 +578,7 @@ const server = http.createServer(async (req, res) => {
                         const filename = `furniture_${Date.now()}.${ext}`;
                         fs.writeFileSync(path.join(UPLOADS_DIR, filename), Buffer.from(matches[2], 'base64'));
                         updatedImage = `/uploads/${filename}`;
+                        updatedImageData = body.imageBase64;
                     }
                 } catch (e) {
                     console.error('Image update error:', e);
@@ -432,17 +622,20 @@ const server = http.createServer(async (req, res) => {
                 finish: body.finish || products[index].finish,
                 description: body.description || products[index].description,
                 image: updatedImage,
+                imageData: updatedImageData || products[index].imageData,
                 images: updatedAngleImages.length > 0 ? updatedAngleImages : [updatedImage],
                 inStock: body.inStock !== undefined ? body.inStock : products[index].inStock
             };
 
             writeJSON(PRODUCTS_FILE, products);
+            syncToGitHub(products);
             return sendJSON(res, 200, { success: true, product: products[index] });
         }
 
         if (method === 'DELETE') {
             const deleted = products.splice(index, 1)[0];
             writeJSON(PRODUCTS_FILE, products);
+            syncToGitHub(products);
             return sendJSON(res, 200, { success: true, message: 'Deleted successfully', deleted });
         }
     }
@@ -484,6 +677,7 @@ const server = http.createServer(async (req, res) => {
             const orders = readJSON(ORDERS_FILE, DEFAULT_ORDERS);
             orders.unshift(newOrder);
             writeJSON(ORDERS_FILE, orders);
+            syncOrdersToGitHub(orders);
 
             return sendJSON(res, 201, {
                 success: true,
@@ -491,6 +685,29 @@ const server = http.createServer(async (req, res) => {
                 order: newOrder
             });
         }
+    }
+
+    // Batch Orders Sync (Re-hydration Endpoint from LocalStorage)
+    if (pathname === '/api/orders/sync' && method === 'POST') {
+        const body = await parseBody(req);
+        const incoming = Array.isArray(body.orders) ? body.orders : [];
+        const orders = readJSON(ORDERS_FILE, DEFAULT_ORDERS);
+        let addedCount = 0;
+
+        incoming.forEach(inc => {
+            if (!inc.orderId) return;
+            const idx = orders.findIndex(o => o.orderId === inc.orderId);
+            if (idx >= 0) {
+                orders[idx] = inc;
+            } else {
+                orders.unshift(inc);
+                addedCount++;
+            }
+        });
+
+        writeJSON(ORDERS_FILE, orders);
+        syncOrdersToGitHub(orders);
+        return sendJSON(res, 200, { success: true, count: addedCount, total: orders.length });
     }
 
     // Customer Track Order API (Lookup by Order ID or Phone number)
@@ -537,6 +754,7 @@ const server = http.createServer(async (req, res) => {
 
         order.status = body.status || order.status;
         writeJSON(ORDERS_FILE, orders);
+        syncOrdersToGitHub(orders);
         return sendJSON(res, 200, { success: true, order });
     }
 
@@ -552,6 +770,7 @@ const server = http.createServer(async (req, res) => {
 
         const deleted = orders.splice(index, 1)[0];
         writeJSON(ORDERS_FILE, orders);
+        syncOrdersToGitHub(orders);
         return sendJSON(res, 200, { success: true, message: 'Order deleted successfully', deleted });
     }
 

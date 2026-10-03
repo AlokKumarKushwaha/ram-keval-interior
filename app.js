@@ -67,19 +67,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadProducts();
     await loadSettings();
 
-    // Fetch Products Function
+    // Fetch Products Function (Hybrid Server + Local Custom Persistence)
     async function loadProducts() {
+        let serverProducts = [];
         try {
             const res = await fetch("/api/products");
             if (res.ok) {
-                products = await res.json();
-            } else {
-                products = Storage.getProducts();
+                serverProducts = await res.json();
             }
         } catch (e) {
-            // Offline / file:// protocol fallback
-            products = Storage.getProducts();
+            console.log("Server waking up / offline fallback active...");
         }
+
+        // Merge server products with local custom products
+        const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
+        const allLocal = Storage.getProducts();
+
+        const merged = [...serverProducts];
+        localCustom.forEach(cp => {
+            if (!merged.some(p => p.id === cp.id)) {
+                merged.unshift(cp);
+            }
+        });
+
+        if (merged.length > 0) {
+            products = merged;
+            Storage.saveProducts(merged);
+        } else {
+            products = allLocal;
+        }
+
         renderProducts();
     }
 

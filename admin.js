@@ -160,21 +160,75 @@ document.addEventListener("DOMContentLoaded", () => {
                 fetch("/api/settings")
             ]);
 
-            if (prodRes.ok) products = await prodRes.json();
-            if (ordRes.ok) orders = await ordRes.json();
+            if (prodRes.ok) {
+                products = await prodRes.json();
+
+                // AUTO-REHYDRATE ENGINE:
+                // Check if any custom products created by admin are missing from the server (e.g. after Render restart)
+                const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
+                if (localCustom.length > 0) {
+                    const missingOnServer = localCustom.filter(cp => !products.some(sp => sp.id === cp.id));
+                    if (missingOnServer.length > 0) {
+                        console.log(`Auto-rehydrating ${missingOnServer.length} custom products to server...`);
+                        try {
+                            await fetch("/api/products/sync", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ products: missingOnServer })
+                            });
+                        } catch (syncErr) {
+                            console.warn("Auto-sync deferred:", syncErr);
+                        }
+                        // Instantly include them in active products array
+                        missingOnServer.forEach(cp => {
+                            if (!products.some(sp => sp.id === cp.id)) {
+                                products.unshift(cp);
+                            }
+                        });
+                    }
+                }
+                Storage.saveProducts(products);
+            }
+
+            if (ordRes.ok) {
+                orders = await ordRes.json();
+                // Auto-sync any local orders that were wiped on server restart
+                const localOrders = Storage.getOrders();
+                const missingOrders = localOrders.filter(lo => !orders.some(so => so.orderId === lo.orderId));
+                if (missingOrders.length > 0) {
+                    try {
+                        await fetch("/api/orders/sync", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ orders: missingOrders })
+                        });
+                    } catch (e) {}
+                    missingOrders.forEach(mo => {
+                        if (!orders.some(so => so.orderId === mo.orderId)) orders.unshift(mo);
+                    });
+                }
+                Storage.saveOrders(orders);
+            }
+
             if (setRes.ok) settings = await setRes.json();
 
             if (statRes.ok) {
                 const stats = await statRes.json();
-                statTotalProducts.textContent = stats.totalProducts;
-                statTotalOrders.textContent = stats.totalOrders;
-                tabOrderCount.textContent = stats.totalOrders;
-                statPendingOrders.textContent = stats.pendingOrders;
-                statTotalValue.textContent = `${settings.currencySymbol || 'Rs.'} ${Number(stats.totalValue).toLocaleString("en-IN")}`;
+                statTotalProducts.textContent = products.length;
+                statTotalOrders.textContent = orders.length;
+                tabOrderCount.textContent = orders.length;
+                const pendingCount = orders.filter(o => o.status === "Pending").length;
+                statPendingOrders.textContent = pendingCount;
+                const totalValue = orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+                statTotalValue.textContent = `${settings.currencySymbol || 'Rs.'} ${Number(totalValue).toLocaleString("en-IN")}`;
             }
         } catch (e) {
             // Local storage fallback
+            const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
             products = Storage.getProducts();
+            localCustom.forEach(cp => {
+                if (!products.some(p => p.id === cp.id)) products.unshift(cp);
+            });
             orders = Storage.getOrders();
             settings = Storage.getSettings();
 
@@ -815,7 +869,9 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
 
             const title = document.getElementById("prodTitleInput").value.trim();
+            const newProdId = 'rk-' + Date.now().toString().slice(-6);
             const payload = {
+                id: newProdId,
                 title: title,
                 category: document.getElementById("prodCategoryInput").value,
                 price: parseFloat(document.getElementById("prodPriceInput").value) || 0,
@@ -825,10 +881,29 @@ document.addEventListener("DOMContentLoaded", () => {
                 finish: document.getElementById("prodFinishInput").value.trim(),
                 description: document.getElementById("prodDescInput").value.trim(),
                 imageBase64: currentUploadedBase64,
+                imageData: currentUploadedBase64 || '',
                 imagesBase64: uploadedAngleImages.map(item => item.dataUrl),
-                image: prodImageUrlInput ? prodImageUrlInput.value.trim() : ""
+                imagesData: uploadedAngleImages.map(item => item.dataUrl),
+                image: currentUploadedBase64 || (prodImageUrlInput ? prodImageUrlInput.value.trim() : ""),
+                images: uploadedAngleImages.length > 0 ? uploadedAngleImages.map(item => item.dataUrl) : [currentUploadedBase64 || (prodImageUrlInput ? prodImageUrlInput.value.trim() : "")],
+                inStock: true,
+                createdAt: new Date().toISOString()
             };
 
+            // 1. Permanent Local Custom Products Storage (Never lost on browser)
+            const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
+            // Check if already in list
+            const exIdx = localCustom.findIndex(p => p.id === newProdId);
+            if (exIdx >= 0) localCustom[exIdx] = payload;
+            else localCustom.unshift(payload);
+            localStorage.setItem("rki_custom_products", JSON.stringify(localCustom));
+
+            // Also update all local products cache
+            const allLocal = Storage.getProducts();
+            allLocal.unshift(payload);
+            Storage.saveProducts(allLocal);
+
+            // 2. Send to Backend Server
             try {
                 const res = await fetch("/api/products", {
                     method: "POST",
@@ -836,22 +911,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: JSON.stringify(payload)
                 });
                 if (res.ok) {
-                    alert(`"${payload.title}" has been saved with customized multi-angle photos and published live!`);
+                    const data = await res.json();
+                    if (data.product && data.product.image) {
+                        payload.image = data.product.image;
+                        localStorage.setItem("rki_custom_products", JSON.stringify(localCustom));
+                    }
+                    alert(`"${payload.title}" has been saved permanently to your website!`);
                 } else {
-                    throw new Error("Server responded with error");
+                    alert(`"${payload.title}" saved to local storage! (Server waking up, will auto-sync).`);
                 }
             } catch (err) {
-                // LocalStorage Fallback
-                const local = Storage.getProducts();
-                local.unshift({
-                    id: "rk-" + Date.now().toString().slice(-5),
-                    ...payload,
-                    image: payload.imageBase64 || payload.image || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80",
-                    images: payload.imagesBase64 && payload.imagesBase64.length > 0 ? payload.imagesBase64 : [payload.imageBase64 || payload.image],
-                    inStock: true
-                });
-                Storage.saveProducts(local);
-                alert(`"${payload.title}" added to local catalog!`);
+                alert(`"${payload.title}" saved to local storage! (Auto-sync will upload to server).`);
             }
 
             newProductForm.reset();
@@ -921,8 +991,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 finish: document.getElementById("editProdFinish").value.trim(),
                 description: document.getElementById("editProdDesc").value.trim(),
                 image: editProdImage.value.trim(),
-                imageBase64: editUploadedBase64
+                imageBase64: editUploadedBase64,
+                imageData: editUploadedBase64 || ''
             };
+
+            // Update local custom products
+            const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
+            const cp = localCustom.find(item => item.id === id);
+            if (cp) {
+                Object.assign(cp, updatePayload);
+                localStorage.setItem("rki_custom_products", JSON.stringify(localCustom));
+            }
+
+            // Update general storage
+            const local = Storage.getProducts();
+            const p = local.find(item => item.id === id);
+            if (p) {
+                Object.assign(p, updatePayload);
+                Storage.saveProducts(local);
+            }
 
             try {
                 await fetch(`/api/products/${id}`, {
@@ -931,12 +1018,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: JSON.stringify(updatePayload)
                 });
             } catch (err) {
-                const local = Storage.getProducts();
-                const p = local.find(item => item.id === id);
-                if (p) {
-                    Object.assign(p, updatePayload);
-                    Storage.saveProducts(local);
-                }
+                console.warn("Server update deferred:", err);
             }
 
             closeEditProductModal();
@@ -949,14 +1031,25 @@ document.addEventListener("DOMContentLoaded", () => {
         const prod = products.find(p => p.id === productId);
         if (!prod) return;
 
-        if (confirm(`Are you sure you want to delete "${prod.title}"?`)) {
+        if (confirm(`Are you sure you want to delete "${prod.title}"? (क्या आप वाकई इसे हटाना चाहते हैं?)`)) {
+            // 1. Remove from local custom storage
+            let localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
+            localCustom = localCustom.filter(p => p.id !== productId);
+            localStorage.setItem("rki_custom_products", JSON.stringify(localCustom));
+
+            // 2. Remove from general storage
+            const local = Storage.getProducts().filter(p => p.id !== productId);
+            Storage.saveProducts(local);
+
+            // 3. Send DELETE to server
             try {
                 await fetch(`/api/products/${productId}`, { method: "DELETE" });
             } catch (err) {
-                const local = Storage.getProducts().filter(p => p.id !== productId);
-                Storage.saveProducts(local);
+                console.warn("Server delete deferred:", err);
             }
+
             await refreshAllData();
+            alert(`"${prod.title}" has been deleted.`);
         }
     }
 
@@ -1067,6 +1160,64 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             };
             reader.readAsText(file);
+        });
+    }
+
+    // -------------------------------------------------------------
+    // PERMANENT CLOUD AUTO-SYNC BUTTON
+    // -------------------------------------------------------------
+    const forceSyncCloudBtn = document.getElementById("forceSyncCloudBtn");
+    const syncStatusBanner = document.getElementById("syncStatusBanner");
+
+    if (forceSyncCloudBtn) {
+        forceSyncCloudBtn.addEventListener("click", async () => {
+            forceSyncCloudBtn.disabled = true;
+            forceSyncCloudBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Syncing to Cloud Server...`;
+
+            try {
+                const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
+                const allLocal = Storage.getProducts();
+                const toSync = localCustom.length > 0 ? localCustom : allLocal;
+
+                const pRes = await fetch("/api/products/sync", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ products: toSync })
+                });
+
+                const localOrders = Storage.getOrders();
+                const oRes = await fetch("/api/orders/sync", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ orders: localOrders })
+                });
+
+                if (pRes.ok && oRes.ok) {
+                    if (syncStatusBanner) {
+                        syncStatusBanner.style.display = "block";
+                        syncStatusBanner.style.background = "#e8f5e9";
+                        syncStatusBanner.style.color = "#2e7d32";
+                        syncStatusBanner.style.border = "1px solid #c8e6c9";
+                        syncStatusBanner.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>✓ All ${toSync.length} furniture items and ${localOrders.length} customer orders are successfully synchronized with the cloud server!</strong>`;
+                    }
+                    alert("✓ Success! All furniture catalog and orders have been synchronized with the live cloud server!");
+                } else {
+                    throw new Error("Server returned an error status during sync.");
+                }
+            } catch (err) {
+                if (syncStatusBanner) {
+                    syncStatusBanner.style.display = "block";
+                    syncStatusBanner.style.background = "#ffebee";
+                    syncStatusBanner.style.color = "#c62828";
+                    syncStatusBanner.style.border = "1px solid #ffcdd2";
+                    syncStatusBanner.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Sync deferred: ${err.message}. Your data is safely stored in this browser.`;
+                }
+                alert("Note: Server is currently spinning up. Your data is 100% safe in your browser and will automatically sync when online.");
+            } finally {
+                forceSyncCloudBtn.disabled = false;
+                forceSyncCloudBtn.innerHTML = `<i class="fa-solid fa-rotate"></i> Force Sync All Furniture & Orders to Cloud Now`;
+                await refreshAllData();
+            }
         });
     }
 
