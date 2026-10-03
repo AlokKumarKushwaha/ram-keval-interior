@@ -1,5 +1,35 @@
 [
   {
+    "orderId": "RKI-7774",
+    "date": "2026-10-02 10:42",
+    "customerName": "ALOK KUMAR KUSHWAHA",
+    "customerPhone": "08423406830",
+    "customerCity": "Kathmandu, Nepal",
+    "customerAddress": "VILL JAGDISHPUR , POST AUNDI ,DIS bALLIA",
+    "furnitureId": "rk-101",
+    "furnitureTitle": "Royal Teak King Size Bed with Tufted Headboard",
+    "furniturePrice": 85000,
+    "quantity": 1,
+    "totalAmount": 85000,
+    "status": "Pending",
+    "notes": ""
+  },
+  {
+    "orderId": "RKI-8903",
+    "date": "2026-10-01 09:45",
+    "customerName": "Pooja Reddy",
+    "customerPhone": "+91-9885091234",
+    "customerCity": "Hyderabad",
+    "customerAddress": "Jubilee Hills, Road No. 36, Flat 402",
+    "furnitureId": "rk-104",
+    "furnitureTitle": "Modular Acrylic Kitchen Cabinetry System",
+    "furniturePrice": 145000,
+    "quantity": 1,
+    "totalAmount": 145000,
+    "status": "In Production",
+    "notes": "Site visit and kitchen layout blueprint requested."
+  },
+  {
     "orderId": "RKI-6624",
     "date": "2026-10-01 14:32",
     "customerName": "ALOK KUMAR KUSHWAHA",
