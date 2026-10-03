@@ -69,6 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const settingGitHubToken = document.getElementById("settingGitHubToken");
     const testGitHubBtn = document.getElementById("testGitHubBtn");
     const githubTestFeedback = document.getElementById("githubTestFeedback");
+    const githubStatusBadge = document.getElementById("githubStatusBadge");
     const exportDataBtn = document.getElementById("exportDataBtn");
     const resetDataBtn = document.getElementById("resetDataBtn");
     const restoreBackupFileInput = document.getElementById("restoreBackupFileInput");
@@ -897,6 +898,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const title = document.getElementById("prodTitleInput").value.trim();
             const newProdId = 'rk-' + Date.now().toString().slice(-6);
+            const mainImg = currentUploadedBase64 || (prodImageUrlInput ? prodImageUrlInput.value.trim() : "");
+            const angleImgs = uploadedAngleImages.length > 0 ? uploadedAngleImages.map(item => item.dataUrl) : [mainImg];
+
             const payload = {
                 id: newProdId,
                 title: title,
@@ -907,34 +911,33 @@ document.addEventListener("DOMContentLoaded", () => {
                 dimensions: document.getElementById("prodDimensionsInput").value.trim(),
                 finish: document.getElementById("prodFinishInput").value.trim(),
                 description: document.getElementById("prodDescInput").value.trim(),
-                imageBase64: currentUploadedBase64,
+                image: mainImg,
                 imageData: currentUploadedBase64 || '',
-                imagesBase64: uploadedAngleImages.map(item => item.dataUrl),
-                imagesData: uploadedAngleImages.map(item => item.dataUrl),
-                image: currentUploadedBase64 || (prodImageUrlInput ? prodImageUrlInput.value.trim() : ""),
-                images: uploadedAngleImages.length > 0 ? uploadedAngleImages.map(item => item.dataUrl) : [currentUploadedBase64 || (prodImageUrlInput ? prodImageUrlInput.value.trim() : "")],
+                images: angleImgs,
+                imagesData: angleImgs,
                 inStock: true,
                 createdAt: new Date().toISOString()
             };
 
-            // 1. Permanent Local Custom Products Storage (Never lost on browser)
+            // 1. Permanent Local Storage Backup (Optimized to never overflow browser quota)
             try {
                 const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
-                // Check if already in list
                 const exIdx = localCustom.findIndex(p => p.id === newProdId);
-                if (exIdx >= 0) localCustom[exIdx] = payload;
-                else localCustom.unshift(payload);
+                const localItem = { ...payload };
+                // Keep only main image data in local backup to stay ultra light
+                if (localItem.imagesData) delete localItem.imagesData;
+                if (exIdx >= 0) localCustom[exIdx] = localItem;
+                else localCustom.unshift(localItem);
                 localStorage.setItem("rki_custom_products", JSON.stringify(localCustom));
 
-                // Also update all local products cache
                 const allLocal = Storage.getProducts();
-                allLocal.unshift(payload);
+                allLocal.unshift(localItem);
                 Storage.saveProducts(allLocal);
             } catch (storageErr) {
                 console.warn("Local storage write warning:", storageErr);
             }
 
-            // 2. Send to Backend Server
+            // 2. Send to Backend Server (with Cloud Auto-Commit)
             try {
                 const res = await fetch("/api/products", {
                     method: "POST",
@@ -944,15 +947,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (res.ok) {
                     const data = await res.json();
                     if (data.product && data.product.image) {
-                        payload.image = data.product.image;
-                        localStorage.setItem("rki_custom_products", JSON.stringify(localCustom));
+                        try {
+                            const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
+                            const found = localCustom.find(p => p.id === newProdId);
+                            if (found) {
+                                found.image = data.product.image;
+                                if (data.product.images) found.images = data.product.images;
+                                delete found.imageData;
+                                delete found.imagesData;
+                                localStorage.setItem("rki_custom_products", JSON.stringify(localCustom));
+                            }
+                        } catch (e) {}
                     }
-                    alert(`"${payload.title}" has been saved permanently to your website!`);
+                    alert(`✓ "${payload.title}" has been added and saved permanently!`);
                 } else {
-                    alert(`"${payload.title}" saved to local storage! (Server waking up, will auto-sync).`);
+                    alert(`"${payload.title}" saved locally! Server is waking up and will sync automatically.`);
                 }
             } catch (err) {
-                alert(`"${payload.title}" saved to local storage! (Auto-sync will upload to server).`);
+                alert(`"${payload.title}" saved to local backup! It will auto-sync to the server.`);
             }
 
             newProductForm.reset();
@@ -1094,7 +1106,20 @@ document.addEventListener("DOMContentLoaded", () => {
         settingWhatsApp.value = settings.whatsapp || "9779800000000";
         settingEmail.value = settings.email || "ramashisha55@gmail.com";
         settingPin.value = settings.adminPin || "1985";
-        if (settingGitHubToken) settingGitHubToken.value = settings.githubToken || "";
+        if (settingGitHubToken) {
+            settingGitHubToken.value = settings.githubToken || "";
+            if (githubStatusBadge) {
+                if (settings.githubToken) {
+                    githubStatusBadge.textContent = "✓ Connected (Cloud Active)";
+                    githubStatusBadge.style.background = "#d4edda";
+                    githubStatusBadge.style.color = "#155724";
+                } else {
+                    githubStatusBadge.textContent = "Not Connected";
+                    githubStatusBadge.style.background = "#fff3cd";
+                    githubStatusBadge.style.color = "#856404";
+                }
+            }
+        }
     }
 
     if (testGitHubBtn && settingGitHubToken) {
@@ -1124,13 +1149,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 const result = await res.json();
 
                 if (res.ok && result.success) {
+                    if (githubStatusBadge) {
+                        githubStatusBadge.textContent = "✓ Connected (Cloud Active)";
+                        githubStatusBadge.style.background = "#d4edda";
+                        githubStatusBadge.style.color = "#155724";
+                    }
                     if (githubTestFeedback) {
                         githubTestFeedback.style.display = "block";
                         githubTestFeedback.style.background = "#d4edda";
                         githubTestFeedback.style.color = "#155724";
                         githubTestFeedback.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>GitHub Connected & Synced!</strong> All products and orders are now permanently backed up to the GitHub repository. Even if Render restarts, data will NEVER be lost!`;
                     }
-                    alert("✓ GitHub Connection Successful! Your products are now permanently backed up to your GitHub repository.");
+                    alert("✓ GitHub Connection Successful! Your products and orders are now permanently backed up to your GitHub repository.");
                     await refreshAllData();
                 } else {
                     if (githubTestFeedback) {

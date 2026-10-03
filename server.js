@@ -917,4 +917,15 @@ server.listen(PORT, () => {
     console.log(`  Database Storage:    ${DATA_DIR}`);
     console.log(`  Photo Uploads Dir:   ${UPLOADS_DIR}`);
     console.log(`====================================================`);
+
+    // Cloud Keep-Alive: Ping external URL every 10 minutes to prevent Render free tier from sleeping after 15 min
+    const KEEP_ALIVE_URL = process.env.RENDER_EXTERNAL_URL || 'https://ram-keval-interior.onrender.com';
+    setInterval(async () => {
+        try {
+            await fetch(`${KEEP_ALIVE_URL}/api/stats`);
+            console.log(`[Keep-Alive] Self-ping successful: active at ${new Date().toISOString()}`);
+        } catch (e) {
+            console.log(`[Keep-Alive] Ping notification: ${e.message}`);
+        }
+    }, 10 * 60 * 1000);
 });

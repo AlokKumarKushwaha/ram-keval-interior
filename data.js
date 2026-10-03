@@ -204,12 +204,27 @@ const Storage = {
         }
     },
     saveProducts(products) {
-        localStorage.setItem("rki_products", JSON.stringify(products));
+        try {
+            // Clean products to strip duplicate large base64 fields before saving to localStorage
+            const clean = (products || []).map(p => {
+                const clone = { ...p };
+                if (clone.image && !clone.image.startsWith('data:image')) {
+                    delete clone.imageData;
+                    delete clone.imageBase64;
+                    delete clone.imagesData;
+                    delete clone.imagesBase64;
+                }
+                return clone;
+            });
+            localStorage.setItem("rki_products", JSON.stringify(clean));
+        } catch (e) {
+            console.warn("Storage quota warning on saveProducts:", e);
+        }
     },
     getOrders() {
         const data = localStorage.getItem("rki_orders");
         if (!data) {
-            localStorage.setItem("rki_orders", JSON.stringify(INITIAL_ORDERS));
+            try { localStorage.setItem("rki_orders", JSON.stringify(INITIAL_ORDERS)); } catch (e) {}
             return INITIAL_ORDERS;
         }
         try {
@@ -219,12 +234,16 @@ const Storage = {
         }
     },
     saveOrders(orders) {
-        localStorage.setItem("rki_orders", JSON.stringify(orders));
+        try {
+            localStorage.setItem("rki_orders", JSON.stringify(orders || []));
+        } catch (e) {
+            console.warn("Storage quota warning on saveOrders:", e);
+        }
     },
     getSettings() {
         const data = localStorage.getItem("rki_settings");
         if (!data) {
-            localStorage.setItem("rki_settings", JSON.stringify(INITIAL_SETTINGS));
+            try { localStorage.setItem("rki_settings", JSON.stringify(INITIAL_SETTINGS)); } catch (e) {}
             return INITIAL_SETTINGS;
         }
         try {
@@ -234,11 +253,18 @@ const Storage = {
         }
     },
     saveSettings(settings) {
-        localStorage.setItem("rki_settings", JSON.stringify(settings));
+        try {
+            localStorage.setItem("rki_settings", JSON.stringify(settings || {}));
+        } catch (e) {
+            console.warn("Storage quota warning on saveSettings:", e);
+        }
     },
     resetToDefault() {
-        localStorage.setItem("rki_products", JSON.stringify(INITIAL_PRODUCTS));
-        localStorage.setItem("rki_orders", JSON.stringify(INITIAL_ORDERS));
-        localStorage.setItem("rki_settings", JSON.stringify(INITIAL_SETTINGS));
+        try {
+            localStorage.setItem("rki_products", JSON.stringify(INITIAL_PRODUCTS));
+            localStorage.setItem("rki_orders", JSON.stringify(INITIAL_ORDERS));
+            localStorage.setItem("rki_settings", JSON.stringify(INITIAL_SETTINGS));
+            localStorage.removeItem("rki_custom_products");
+        } catch (e) {}
     }
 };
