@@ -391,6 +391,22 @@
                             <input type="text" id="settingPin" style="letter-spacing: 2px;">
                         </div>
 
+                        <div class="form-group">
+                            <label for="settingGitHubToken">
+                                <i class="fa-brands fa-github"></i> GitHub Cloud Token (Permanent Persistence / डेटा कभी न खोने के लिए)
+                            </label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="password" id="settingGitHubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="flex: 1;">
+                                <button type="button" id="testGitHubBtn" class="btn btn-outline" style="font-size: 0.8rem; padding: 6px 12px; white-space: nowrap;">
+                                    <i class="fa-solid fa-plug"></i> Test Connection
+                                </button>
+                            </div>
+                            <div id="githubTestFeedback" style="display: none; font-size: 0.78rem; margin-top: 5px; padding: 6px 10px; border-radius: 6px;"></div>
+                            <div style="font-size: 0.76rem; color: #666; margin-top: 4px;">
+                                GitHub Token daalne par new furniture seedha aapke GitHub repo (<code>AlokKumarKushwaha/ram-keval-interior</code>) me auto-commit ho jayega aur Render restart hone par bhi <strong>hardam website par bana rahega</strong>.
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary admin-submit-btn" style="margin-bottom: 28px;">
                             <i class="fa-solid fa-check"></i> Update Settings
                         </button>

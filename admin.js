@@ -66,6 +66,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const settingWhatsApp = document.getElementById("settingWhatsApp");
     const settingEmail = document.getElementById("settingEmail");
     const settingPin = document.getElementById("settingPin");
+    const settingGitHubToken = document.getElementById("settingGitHubToken");
+    const testGitHubBtn = document.getElementById("testGitHubBtn");
+    const githubTestFeedback = document.getElementById("githubTestFeedback");
     const exportDataBtn = document.getElementById("exportDataBtn");
     const resetDataBtn = document.getElementById("resetDataBtn");
     const restoreBackupFileInput = document.getElementById("restoreBackupFileInput");
@@ -508,28 +511,52 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function compressImageFile(file, maxDim = 1000, quality = 0.78) {
+        return new Promise((resolve) => {
+            if (!file.type || !file.type.startsWith("image/")) {
+                resolve(null);
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) {
+                            h = Math.round((h * maxDim) / w);
+                            w = maxDim;
+                        } else {
+                            w = Math.round((w * maxDim) / h);
+                            h = maxDim;
+                        }
+                    }
+                    const canvas = document.createElement("canvas");
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, w, h);
+                    const compressed = canvas.toDataURL("image/jpeg", quality);
+                    resolve({
+                        id: "ang_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+                        dataUrl: compressed,
+                        name: file.name
+                    });
+                };
+                img.onerror = () => resolve(null);
+                img.src = e.target.result;
+            };
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(file);
+        });
+    }
+
     async function handleSelectedAngleFiles(files) {
         if (!files || files.length === 0) return;
 
         const fileArray = Array.from(files);
-        const readPromises = fileArray.map(file => {
-            return new Promise((resolve) => {
-                if (!file.type || !file.type.startsWith("image/")) {
-                    resolve(null);
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    resolve({
-                        id: "ang_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
-                        dataUrl: e.target.result,
-                        name: file.name
-                    });
-                };
-                reader.onerror = () => resolve(null);
-                reader.readAsDataURL(file);
-            });
-        });
+        const readPromises = fileArray.map(file => compressImageFile(file, 1000, 0.78));
 
         const newItems = (await Promise.all(readPromises)).filter(Boolean);
         uploadedAngleImages.push(...newItems);
@@ -797,8 +824,8 @@ document.addEventListener("DOMContentLoaded", () => {
         ctx.fillText("HANDCRAFTED DURABILITY & BESPOKE PERFECTION", W - 18, ribbonY + 24);
         ctx.textAlign = "left";
 
-        // Export Data URL
-        const compositeDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+        // Export Data URL (Optimized JPEG for fast load and persistence)
+        const compositeDataUrl = canvas.toDataURL("image/jpeg", 0.82);
         currentUploadedBase64 = compositeDataUrl;
 
         if (imagePreviewImg) imagePreviewImg.src = compositeDataUrl;
@@ -891,17 +918,21 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             // 1. Permanent Local Custom Products Storage (Never lost on browser)
-            const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
-            // Check if already in list
-            const exIdx = localCustom.findIndex(p => p.id === newProdId);
-            if (exIdx >= 0) localCustom[exIdx] = payload;
-            else localCustom.unshift(payload);
-            localStorage.setItem("rki_custom_products", JSON.stringify(localCustom));
+            try {
+                const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
+                // Check if already in list
+                const exIdx = localCustom.findIndex(p => p.id === newProdId);
+                if (exIdx >= 0) localCustom[exIdx] = payload;
+                else localCustom.unshift(payload);
+                localStorage.setItem("rki_custom_products", JSON.stringify(localCustom));
 
-            // Also update all local products cache
-            const allLocal = Storage.getProducts();
-            allLocal.unshift(payload);
-            Storage.saveProducts(allLocal);
+                // Also update all local products cache
+                const allLocal = Storage.getProducts();
+                allLocal.unshift(payload);
+                Storage.saveProducts(allLocal);
+            } catch (storageErr) {
+                console.warn("Local storage write warning:", storageErr);
+            }
 
             // 2. Send to Backend Server
             try {
@@ -1063,6 +1094,66 @@ document.addEventListener("DOMContentLoaded", () => {
         settingWhatsApp.value = settings.whatsapp || "9779800000000";
         settingEmail.value = settings.email || "ramashisha55@gmail.com";
         settingPin.value = settings.adminPin || "1985";
+        if (settingGitHubToken) settingGitHubToken.value = settings.githubToken || "";
+    }
+
+    if (testGitHubBtn && settingGitHubToken) {
+        testGitHubBtn.addEventListener("click", async () => {
+            const token = settingGitHubToken.value.trim();
+            if (!token) {
+                alert("Please enter your GitHub Token first! / पहले GitHub Token दर्ज करें।");
+                settingGitHubToken.focus();
+                return;
+            }
+
+            testGitHubBtn.disabled = true;
+            testGitHubBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Connecting...`;
+            if (githubTestFeedback) {
+                githubTestFeedback.style.display = "block";
+                githubTestFeedback.style.background = "#fff3cd";
+                githubTestFeedback.style.color = "#856404";
+                githubTestFeedback.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Testing connection to GitHub repository...`;
+            }
+
+            try {
+                const res = await fetch("/api/settings/test-github", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token })
+                });
+                const result = await res.json();
+
+                if (res.ok && result.success) {
+                    if (githubTestFeedback) {
+                        githubTestFeedback.style.display = "block";
+                        githubTestFeedback.style.background = "#d4edda";
+                        githubTestFeedback.style.color = "#155724";
+                        githubTestFeedback.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>GitHub Connected & Synced!</strong> All products and orders are now permanently backed up to the GitHub repository. Even if Render restarts, data will NEVER be lost!`;
+                    }
+                    alert("✓ GitHub Connection Successful! Your products are now permanently backed up to your GitHub repository.");
+                    await refreshAllData();
+                } else {
+                    if (githubTestFeedback) {
+                        githubTestFeedback.style.display = "block";
+                        githubTestFeedback.style.background = "#f8d7da";
+                        githubTestFeedback.style.color = "#721c24";
+                        githubTestFeedback.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Connection Error: ${result.error || 'Failed to authenticate with GitHub'}`;
+                    }
+                    alert("GitHub Connection Failed: " + (result.error || "Please verify your token."));
+                }
+            } catch (err) {
+                if (githubTestFeedback) {
+                    githubTestFeedback.style.display = "block";
+                    githubTestFeedback.style.background = "#f8d7da";
+                    githubTestFeedback.style.color = "#721c24";
+                    githubTestFeedback.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Network error: ${err.message}`;
+                }
+                alert("Error connecting to server: " + err.message);
+            } finally {
+                testGitHubBtn.disabled = false;
+                testGitHubBtn.innerHTML = `<i class="fa-solid fa-plug"></i> Test Connection`;
+            }
+        });
     }
 
     if (shopSettingsForm) {
@@ -1073,7 +1164,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 phone: settingPhone.value.trim(),
                 whatsapp: settingWhatsApp.value.trim(),
                 email: settingEmail.value.trim(),
-                adminPin: settingPin.value.trim()
+                adminPin: settingPin.value.trim(),
+                githubToken: settingGitHubToken ? settingGitHubToken.value.trim() : ""
             };
 
             try {

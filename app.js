@@ -97,6 +97,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             products = allLocal;
         }
 
+        // Background Cloud Re-hydration: If server restarted and lost custom products, re-sync them!
+        if (serverProducts.length > 0 && localCustom.length > 0) {
+            const missingOnServer = localCustom.filter(cp => !serverProducts.some(p => p.id === cp.id));
+            if (missingOnServer.length > 0) {
+                fetch("/api/products/sync", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ products: missingOnServer })
+                }).catch(() => {});
+            }
+        }
+
         renderProducts();
     }
 

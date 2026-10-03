@@ -34,7 +34,8 @@ const DEFAULT_SETTINGS = {
     phone: "+977 9823471413 (For Nepal Only)",
     whatsapp: "9779823471413",
     currencySymbol: "Rs.",
-    adminPin: "1985"
+    adminPin: "1985",
+    githubToken: ""
 };
 
 const DEFAULT_PRODUCTS = [
@@ -207,7 +208,8 @@ function writeJSON(file, data) {
 
 // Cloud Persistence: Commit to GitHub Repository if GITHUB_TOKEN is configured
 async function syncToGitHub(products) {
-    const token = process.env.GITHUB_TOKEN;
+    const settings = readJSON(SETTINGS_FILE, DEFAULT_SETTINGS);
+    const token = process.env.GITHUB_TOKEN || settings.githubToken;
     if (!token) return;
 
     try {
@@ -235,7 +237,6 @@ async function syncToGitHub(products) {
         // Clean products for Git commit (avoid huge base64 in repo if image files exist)
         const cleanProds = products.map(p => {
             const clone = { ...p };
-            // If image is a local upload path, keep it; if only base64, keep it
             return clone;
         });
 
@@ -270,7 +271,8 @@ async function syncToGitHub(products) {
 }
 
 async function syncOrdersToGitHub(orders) {
-    const token = process.env.GITHUB_TOKEN;
+    const settings = readJSON(SETTINGS_FILE, DEFAULT_SETTINGS);
+    const token = process.env.GITHUB_TOKEN || settings.githubToken;
     if (!token) return;
 
     try {
@@ -802,6 +804,54 @@ const server = http.createServer(async (req, res) => {
             const updated = { ...current, ...body };
             writeJSON(SETTINGS_FILE, updated);
             return sendJSON(res, 200, { success: true, settings: updated });
+        }
+    }
+
+    // Test and Connect GitHub Token for Cloud Persistence
+    if (pathname === '/api/settings/test-github' && method === 'POST') {
+        const body = await parseBody(req);
+        const token = (body.token || '').trim();
+        const repo = process.env.GITHUB_REPO || 'AlokKumarKushwaha/ram-keval-interior';
+
+        if (!token) {
+            return sendJSON(res, 400, { success: false, error: 'Please enter a valid GitHub Token (starts with ghp_ or github_pat_).' });
+        }
+
+        try {
+            const testRes = await fetch(`https://api.github.com/repos/${repo}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'User-Agent': 'RamKevalInterior-Server'
+                }
+            });
+
+            if (testRes.ok) {
+                const repoData = await testRes.json();
+                // Token is verified! Save it to settings.json
+                const current = readJSON(SETTINGS_FILE, DEFAULT_SETTINGS);
+                current.githubToken = token;
+                writeJSON(SETTINGS_FILE, current);
+
+                // Run immediate cloud sync of both products and orders
+                const products = readJSON(PRODUCTS_FILE, DEFAULT_PRODUCTS);
+                const orders = readJSON(ORDERS_FILE, DEFAULT_ORDERS);
+                syncToGitHub(products);
+                syncOrdersToGitHub(orders);
+
+                return sendJSON(res, 200, {
+                    success: true,
+                    message: `Connected successfully to GitHub repo "${repoData.full_name}"! Products and orders are now permanently backed up.`
+                });
+            } else {
+                const errData = await testRes.json().catch(() => ({}));
+                return sendJSON(res, testRes.status, {
+                    success: false,
+                    error: errData.message || ('GitHub authentication failed (HTTP ' + testRes.status + '). Please check token permissions (repo scope).')
+                });
+            }
+        } catch (err) {
+            return sendJSON(res, 500, { success: false, error: 'Network error connecting to GitHub: ' + err.message });
         }
     }
 
