@@ -1346,10 +1346,24 @@ img {
 }
 
 .prod-price {
-    font-size: 1.35rem;
+    font-size: 1.45rem;
     font-weight: 800;
     color: var(--primary);
-    font-family: 'Playfair Display', serif;
+    font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.25;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.currency-symbol {
+    font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+    font-weight: 800 !important;
+    font-style: normal !important;
+    font-size: 1.3rem !important;
+    display: inline-block !important;
+    line-height: 1 !important;
+    vertical-align: baseline !important;
 }
 
 .prod-equiv-price {
@@ -1358,11 +1372,19 @@ img {
     color: #8b5e3c;
     background: #fdf6ec;
     border: 1px solid #ebdcd0;
-    padding: 2px 8px;
+    padding: 3px 8px;
     border-radius: 4px;
-    display: inline-block;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
     margin-top: 4px;
     width: fit-content;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+}
+
+.prod-equiv-price .currency-symbol {
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
 }
 
 .order-btn-group {

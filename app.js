@@ -45,8 +45,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             inrFormatted: inr.toLocaleString("en-IN"),
             nprFormatted: npr.toLocaleString("en-IN"),
             primaryLabel: currentCurrency === "NPR" ? "Nepal Price (NPR)" : "India Price (INR)",
-            primaryText: currentCurrency === "NPR" ? `रू ${npr.toLocaleString("en-IN")}` : `₹ ${inr.toLocaleString("en-IN")}`,
-            secondaryText: currentCurrency === "NPR" ? `≈ ₹ ${inr.toLocaleString("en-IN")} INR (India)` : `≈ रू ${npr.toLocaleString("en-IN")} NPR (Nepal)`
+            primaryText: currentCurrency === "NPR" 
+                ? `<span class="currency-symbol">रू</span> ${npr.toLocaleString("en-IN")}` 
+                : `<span class="currency-symbol">₹</span> ${inr.toLocaleString("en-IN")}`,
+            secondaryText: currentCurrency === "NPR" 
+                ? `≈ <span class="currency-symbol">₹</span> ${inr.toLocaleString("en-IN")} INR (India)` 
+                : `≈ <span class="currency-symbol">रू</span> ${npr.toLocaleString("en-IN")} NPR (Nepal)`
         };
     }
 
@@ -137,10 +141,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         const qty = parseInt(orderQty ? orderQty.value : 1, 10) || 1;
         const p = getFormattedPrices(selectedProductForOrder.price * qty);
         if (modalProdPrice) {
-            modalProdPrice.textContent = `${p.primaryText} (${currentCurrency})`;
+            modalProdPrice.innerHTML = `${p.primaryText} <span style="font-size: 0.85rem; font-weight: 600; color: #777;">(${currentCurrency})</span>`;
         }
         if (modalProdSubPrice) {
-            modalProdSubPrice.textContent = p.secondaryText;
+            modalProdSubPrice.innerHTML = p.secondaryText;
         }
     }
 
