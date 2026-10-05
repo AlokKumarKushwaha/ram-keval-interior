@@ -383,6 +383,15 @@ const server = http.createServer(async (req, res) => {
         return res.end();
     }
 
+    // 301 Permanent SEO Redirect: Forward all visitor traffic from onrender.com to www.ramkevalinterior.in
+    const host = (req.headers.host || '').toLowerCase();
+    if (host.includes('ram-keval-interior.onrender.com') && !pathname.startsWith('/api/')) {
+        res.writeHead(301, {
+            'Location': `https://www.ramkevalinterior.in${pathname}${parsedUrl.search || ''}`
+        });
+        return res.end();
+    }
+
     // -------------------------------------------------------------
     // REST API ROUTES (/api/...)
     // -------------------------------------------------------------

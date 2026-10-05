@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin.html
 Disallow: /api/
 
-Sitemap: https://ram-keval-interior.onrender.com/sitemap.xml
+Sitemap: https://www.ramkevalinterior.in/sitemap.xml
