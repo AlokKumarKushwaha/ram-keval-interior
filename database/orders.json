@@ -1,20 +1,5 @@
 [
   {
-    "orderId": "RKI-9174",
-    "date": "2026-10-02 05:18",
-    "customerName": "NISHA",
-    "customerPhone": "7985916590",
-    "customerCity": "Kathmandu, Nepal",
-    "customerAddress": "NAXAL",
-    "furnitureId": "rk-104",
-    "furnitureTitle": "Modular Acrylic Kitchen Cabinetry System",
-    "furniturePrice": 145000,
-    "quantity": 1,
-    "totalAmount": 145000,
-    "status": "Pending",
-    "notes": ""
-  },
-  {
     "orderId": "RKI-8202",
     "date": "2026-10-05 14:31",
     "customerName": "RAM",
