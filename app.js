@@ -384,7 +384,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         orderFurnitureId.value = prod.id;
         orderFurnitureTitle.value = prod.title;
         orderFurniturePrice.value = prod.price;
+        const orderFurnitureImage = document.getElementById("orderFurnitureImage");
+        if (orderFurnitureImage) orderFurnitureImage.value = prod.image || '';
         orderQty.value = 1;
+
+        // Auto-prefill saved customer profile (Flipkart-style seamless experience)
+        const savedPhone = localStorage.getItem("rki_user_phone");
+        const savedName = localStorage.getItem("rki_user_name");
+        const savedAddr = localStorage.getItem("rki_user_address");
+        const savedCity = localStorage.getItem("rki_user_city");
+        const custPhoneInput = document.getElementById("custPhone");
+        const custNameInput = document.getElementById("custName");
+        const custAddressInput = document.getElementById("custAddress");
+        const custCityInput = document.getElementById("custCity");
+
+        if (savedPhone && custPhoneInput && !custPhoneInput.value) custPhoneInput.value = savedPhone;
+        if (savedName && custNameInput && !custNameInput.value) custNameInput.value = savedName;
+        if (savedAddr && custAddressInput && !custAddressInput.value) custAddressInput.value = savedAddr;
+        if (savedCity && custCityInput) custCityInput.value = savedCity;
 
         // Modal Angle Switcher
         const modalAngleTray = document.getElementById("modalAngleTray");
@@ -450,6 +467,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             const unitPrice = parseFloat(orderFurniturePrice.value) || 0;
             const total = unitPrice * qty;
 
+            const furnitureImage = document.getElementById("orderFurnitureImage") ? document.getElementById("orderFurnitureImage").value : "";
+
             const orderPayload = {
                 customerName: name,
                 customerPhone: phone,
@@ -458,6 +477,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 furnitureId: orderFurnitureId.value,
                 furnitureTitle: orderFurnitureTitle.value,
                 furniturePrice: unitPrice,
+                furnitureImage: furnitureImage,
                 quantity: qty,
                 notes: notes
             };
@@ -493,12 +513,22 @@ document.addEventListener("DOMContentLoaded", async () => {
                 furnitureId: orderFurnitureId.value,
                 furnitureTitle: orderFurnitureTitle.value,
                 furniturePrice: unitPrice,
+                furnitureImage: furnitureImage,
                 quantity: qty,
                 totalAmount: total,
                 status: "Pending",
                 notes: notes
             });
             Storage.saveOrders(localOrders);
+
+            // Save Customer Profile & Order to localStorage (Flipkart-style user memory)
+            localStorage.setItem("rki_user_name", name);
+            localStorage.setItem("rki_user_phone", phone);
+            localStorage.setItem("rki_user_address", address);
+            localStorage.setItem("rki_user_city", city);
+            localStorage.setItem("rki_last_order_id", generatedOrderId);
+
+            updateCustomerNavbarUI();
 
             // Close order modal
             closeOrderModal();
@@ -528,9 +558,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const waDirectUrl = `https://wa.me/${settings.whatsapp}?text=${waText}`;
 
-            // Save last order ID to localStorage for quick tracking
-            localStorage.setItem("rki_last_order_id", generatedOrderId);
-
             // Show Success Modal
             successOrderIdDisplay.textContent = generatedOrderId;
             successName.textContent = `${name} (${phone})`;
@@ -554,38 +581,104 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (successTrackLiveBtn) {
         successTrackLiveBtn.addEventListener("click", () => {
             successModal.classList.remove("active");
-            const lastId = localStorage.getItem("rki_last_order_id") || successOrderIdDisplay.textContent;
-            openTrackOrderModal(lastId);
+            openTrackOrderModal();
         });
     }
 
     // -------------------------------------------------------------
-    // CUSTOMER ORDER TRACKING CONTROLLER
+    // FLIPKART-STYLE CUSTOMER ACCOUNT & "MY ORDERS" CONTROLLER
     // -------------------------------------------------------------
     const trackOrderModal = document.getElementById("trackOrderModal");
     const closeTrackModalBtn = document.getElementById("closeTrackModalBtn");
     const trackOrderForm = document.getElementById("trackOrderForm");
     const trackOrderInput = document.getElementById("trackOrderInput");
-    const recentOrderQuickBox = document.getElementById("recentOrderQuickBox");
-    const recentOrderIdTag = document.getElementById("recentOrderIdTag");
-    const quickTrackRecentBtn = document.getElementById("quickTrackRecentBtn");
     const trackLoader = document.getElementById("trackLoader");
     const trackErrorMsg = document.getElementById("trackErrorMsg");
     const trackErrorText = document.getElementById("trackErrorText");
     const trackResultContainer = document.getElementById("trackResultContainer");
+    const custProfileStrip = document.getElementById("custProfileStrip");
+    const profileCustName = document.getElementById("profileCustName");
+    const profileCustPhone = document.getElementById("profileCustPhone");
+    const phoneLookupSection = document.getElementById("phoneLookupSection");
+    const btnSwitchPhone = document.getElementById("btnSwitchPhone");
 
-    const trackNavButtons = [
+    // Nav & Dropdown elements
+    const navAccountWrapper = document.getElementById("navAccountWrapper");
+    const navTrackCtaBtn = document.getElementById("navTrackCtaBtn");
+    const navAccountLabel = document.getElementById("navAccountLabel");
+    const dropdownUserName = document.getElementById("dropdownUserName");
+    const dropdownUserPhone = document.getElementById("dropdownUserPhone");
+    const navOrdersBadge = document.getElementById("navOrdersBadge");
+    const mobileOrdersBadge = document.getElementById("mobileOrdersBadge");
+    const menuOrdersCountTag = document.getElementById("menuOrdersCountTag");
+    const menuMyOrdersBtn = document.getElementById("menuMyOrdersBtn");
+    const menuSavedAddressBtn = document.getElementById("menuSavedAddressBtn");
+    const menuSwitchPhoneBtn = document.getElementById("menuSwitchPhoneBtn");
+    const savedAddressModal = document.getElementById("savedAddressModal");
+    const closeSavedAddressModalBtn = document.getElementById("closeSavedAddressModalBtn");
+    const closeSavedAddressBtn = document.getElementById("closeSavedAddressBtn");
+
+    // Update Account Dropdown & Badge UI on Page Load
+    async function updateCustomerNavbarUI() {
+        const savedPhone = localStorage.getItem("rki_user_phone");
+        const savedName = localStorage.getItem("rki_user_name");
+
+        if (savedPhone) {
+            if (dropdownUserName) dropdownUserName.textContent = savedName || "Valued Customer";
+            if (dropdownUserPhone) dropdownUserPhone.textContent = savedPhone;
+            if (navAccountLabel) navAccountLabel.textContent = savedName ? savedName.split(" ")[0] : "My Orders";
+            if (profileCustName) profileCustName.textContent = savedName || "Valued Customer";
+            if (profileCustPhone) profileCustPhone.textContent = savedPhone;
+
+            // Fetch active orders count in background
+            try {
+                const res = await fetch(`/api/orders/track?q=${encodeURIComponent(savedPhone)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const count = data.orders ? data.orders.length : 0;
+                    if (count > 0) {
+                        if (navOrdersBadge) {
+                            navOrdersBadge.textContent = count;
+                            navOrdersBadge.style.display = "inline-block";
+                        }
+                        if (mobileOrdersBadge) {
+                            mobileOrdersBadge.textContent = count;
+                            mobileOrdersBadge.style.display = "inline-block";
+                        }
+                        if (menuOrdersCountTag) {
+                            menuOrdersCountTag.textContent = `${count} Orders`;
+                            menuOrdersCountTag.style.display = "inline-block";
+                        }
+                    }
+                }
+            } catch (e) {
+                // Ignore silent background network errors
+            }
+        } else {
+            if (dropdownUserName) dropdownUserName.textContent = "Guest Customer";
+            if (dropdownUserPhone) dropdownUserPhone.textContent = "No phone linked";
+            if (navAccountLabel) navAccountLabel.textContent = "My Orders";
+            if (navOrdersBadge) navOrdersBadge.style.display = "none";
+            if (mobileOrdersBadge) mobileOrdersBadge.style.display = "none";
+            if (menuOrdersCountTag) menuOrdersCountTag.style.display = "none";
+        }
+    }
+
+    // Call on load
+    updateCustomerNavbarUI();
+
+    // Attach Click Handlers to all "My Orders" buttons
+    const myOrdersTriggers = [
         document.getElementById("navTrackOrderLink"),
-        document.getElementById("navTrackCtaBtn"),
         document.getElementById("mobileTrackOrderBtn"),
-        document.getElementById("topTrackLink")
+        document.getElementById("topTrackLink"),
+        menuMyOrdersBtn
     ];
 
-    trackNavButtons.forEach(btn => {
+    myOrdersTriggers.forEach(btn => {
         if (btn) {
             btn.addEventListener("click", (e) => {
                 e.preventDefault();
-                // Close mobile menu drawer if open
                 if (navLinks && navLinks.classList.contains("mobile-open")) {
                     navLinks.classList.remove("mobile-open");
                 }
@@ -593,6 +686,89 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         }
     });
+
+    // Desktop Account Button click
+    if (navTrackCtaBtn) {
+        navTrackCtaBtn.addEventListener("click", (e) => {
+            // On desktop, click opens modal directly or toggles dropdown
+            if (window.innerWidth <= 768) {
+                e.preventDefault();
+                openTrackOrderModal();
+            } else {
+                openTrackOrderModal();
+            }
+        });
+    }
+
+    // Switch / Enter Mobile No. Button handlers
+    if (btnSwitchPhone) {
+        btnSwitchPhone.addEventListener("click", () => {
+            if (phoneLookupSection) {
+                phoneLookupSection.style.display = phoneLookupSection.style.display === "none" ? "block" : "none";
+                if (phoneLookupSection.style.display === "block" && trackOrderInput) {
+                    trackOrderInput.focus();
+                }
+            }
+        });
+    }
+
+    if (menuSwitchPhoneBtn) {
+        menuSwitchPhoneBtn.addEventListener("click", () => {
+            openTrackOrderModal();
+            if (phoneLookupSection) {
+                phoneLookupSection.style.display = "block";
+                if (trackOrderInput) trackOrderInput.focus();
+            }
+        });
+    }
+
+    // Saved Delivery Address modal handlers
+    if (menuSavedAddressBtn) {
+        menuSavedAddressBtn.addEventListener("click", () => {
+            const savedName = localStorage.getItem("rki_user_name") || "No name saved";
+            const savedPhone = localStorage.getItem("rki_user_phone") || "No phone linked";
+            const savedAddr = localStorage.getItem("rki_user_address") || "No address saved yet. Address will be saved after placing your first order.";
+            const savedCity = localStorage.getItem("rki_user_city") || "Kathmandu, Nepal";
+
+            const nameEl = document.getElementById("savedAddrName");
+            const phoneEl = document.getElementById("savedAddrPhone");
+            const addrEl = document.getElementById("savedAddrText");
+            const cityEl = document.getElementById("savedAddrCity");
+
+            if (nameEl) nameEl.textContent = savedName;
+            if (phoneEl) phoneEl.textContent = savedPhone;
+            if (addrEl) addrEl.textContent = savedAddr;
+            if (cityEl) cityEl.textContent = savedCity;
+
+            if (savedAddressModal) {
+                savedAddressModal.classList.add("active");
+                document.body.style.overflow = "hidden";
+            }
+        });
+    }
+
+    if (closeSavedAddressModalBtn) {
+        closeSavedAddressModalBtn.addEventListener("click", () => {
+            if (savedAddressModal) savedAddressModal.classList.remove("active");
+            document.body.style.overflow = "auto";
+        });
+    }
+
+    if (closeSavedAddressBtn) {
+        closeSavedAddressBtn.addEventListener("click", () => {
+            if (savedAddressModal) savedAddressModal.classList.remove("active");
+            document.body.style.overflow = "auto";
+        });
+    }
+
+    if (savedAddressModal) {
+        savedAddressModal.addEventListener("click", (e) => {
+            if (e.target === savedAddressModal) {
+                savedAddressModal.classList.remove("active");
+                document.body.style.overflow = "auto";
+            }
+        });
+    }
 
     if (closeTrackModalBtn) {
         closeTrackModalBtn.addEventListener("click", closeTrackOrderModal);
@@ -604,33 +780,37 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // Auto open if URL has #track
-    if (window.location.hash === "#track") {
+    // Auto open if URL has #track or #orders
+    if (window.location.hash === "#track" || window.location.hash === "#orders") {
         setTimeout(() => openTrackOrderModal(), 400);
     }
 
     function openTrackOrderModal(initialQuery = "") {
         if (!trackOrderModal) return;
 
-        // Check recent order in localStorage
-        const recentId = localStorage.getItem("rki_last_order_id");
-        if (recentId && recentOrderQuickBox && recentOrderIdTag) {
-            recentOrderIdTag.textContent = recentId;
-            recentOrderQuickBox.style.display = "flex";
-        } else if (recentOrderQuickBox) {
-            recentOrderQuickBox.style.display = "none";
-        }
-
         trackErrorMsg.style.display = "none";
         trackResultContainer.style.display = "none";
         trackLoader.style.display = "none";
 
+        const savedPhone = localStorage.getItem("rki_user_phone");
+        const targetQuery = initialQuery || savedPhone || "";
+
+        if (savedPhone) {
+            if (custProfileStrip) custProfileStrip.style.display = "flex";
+            if (phoneLookupSection) phoneLookupSection.style.display = "none";
+            if (profileCustName) profileCustName.textContent = localStorage.getItem("rki_user_name") || "Valued Customer";
+            if (profileCustPhone) profileCustPhone.textContent = savedPhone;
+        } else {
+            if (custProfileStrip) custProfileStrip.style.display = "none";
+            if (phoneLookupSection) phoneLookupSection.style.display = "block";
+        }
+
         trackOrderModal.classList.add("active");
         document.body.style.overflow = "hidden";
 
-        if (initialQuery) {
-            trackOrderInput.value = initialQuery;
-            performOrderTracking(initialQuery);
+        if (targetQuery) {
+            trackOrderInput.value = targetQuery;
+            performOrderTracking(targetQuery);
         } else {
             trackOrderInput.focus();
         }
@@ -640,16 +820,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!trackOrderModal) return;
         trackOrderModal.classList.remove("active");
         document.body.style.overflow = "auto";
-    }
-
-    if (quickTrackRecentBtn) {
-        quickTrackRecentBtn.addEventListener("click", () => {
-            const recentId = localStorage.getItem("rki_last_order_id");
-            if (recentId) {
-                trackOrderInput.value = recentId;
-                performOrderTracking(recentId);
-            }
-        });
     }
 
     if (trackOrderForm) {
@@ -696,9 +866,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         trackLoader.style.display = "none";
 
         if (matchedOrders.length === 0) {
-            trackErrorText.textContent = `No order found for "${escapeHtml(query)}". Please verify your Order ID (e.g. RKI-1001) or mobile number.`;
+            trackErrorText.textContent = `No order found for "${escapeHtml(query)}". Please enter the 10-digit mobile number used while placing the order.`;
             trackErrorMsg.style.display = "block";
+            if (phoneLookupSection) phoneLookupSection.style.display = "block";
             return;
+        }
+
+        // Save customer profile automatically upon finding orders (Flipkart memory)
+        const latestOrder = matchedOrders[0];
+        if (latestOrder.customerPhone) {
+            localStorage.setItem("rki_user_phone", latestOrder.customerPhone);
+            if (latestOrder.customerName) localStorage.setItem("rki_user_name", latestOrder.customerName);
+            if (latestOrder.customerAddress) localStorage.setItem("rki_user_address", latestOrder.customerAddress);
+            if (latestOrder.customerCity) localStorage.setItem("rki_user_city", latestOrder.customerCity);
+
+            if (custProfileStrip) custProfileStrip.style.display = "flex";
+            if (profileCustName) profileCustName.textContent = latestOrder.customerName || "Valued Customer";
+            if (profileCustPhone) profileCustPhone.textContent = latestOrder.customerPhone;
+            if (phoneLookupSection) phoneLookupSection.style.display = "none";
+
+            updateCustomerNavbarUI();
         }
 
         renderTrackResults(matchedOrders);
@@ -710,7 +897,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             let statusPillClass = "status-pill-pending";
             let statusBadgeText = "Pending Verification / पुष्टि प्रक्रिया में";
             let statusIcon = "fa-clock";
-            let stepIndex = 1; // 1: Placed, 2: Confirmed, 3: In Production, 4: Delivered
+            let stepIndex = 1; // 1: Placed, 2: Confirmed, 3: In Workshop, 4: Delivered
             let progressWidth = "15%";
             let noteText = "Namaste! Aapka order receive ho gaya hai. Humare master craftsman Ram Keval ji aapse call par baat karke order details aur measurements confirm karenge.";
 
@@ -738,7 +925,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             const step1Done = stepIndex >= 1 ? "done" : "";
-            const step2Done = stepIndex >= 2 ? "done" : (stepIndex === 1 ? "" : "");
+            const step2Done = stepIndex >= 2 ? "done" : "";
             const step3Done = stepIndex >= 3 ? "done" : "";
             const step4Done = stepIndex >= 4 ? "done" : "";
 
@@ -747,8 +934,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             const step3Active = stepIndex === 3 ? "active" : "";
             const step4Active = stepIndex === 4 ? "active" : "";
 
+            // Find image for item
+            const itemPhoto = order.furnitureImage || 
+                (products.find(p => p.id === order.furnitureId || p.title === order.furnitureTitle)?.image) || 
+                '';
+
             const waInquiry = encodeURIComponent(
-                `Namaste Ram Keval ji, I am tracking my Order #${order.orderId} for "${order.furnitureTitle}". Current status: ${status}. Please provide an update.`
+                `Namaste Ram Keval ji, I am viewing my Order #${order.orderId} for "${order.furnitureTitle}". Current status: ${status}. Please provide an update.`
             );
             const waInquiryLink = `https://wa.me/${settings.whatsapp}?text=${waInquiry}`;
 
@@ -757,7 +949,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <div class="track-order-header">
                         <div>
                             <span class="track-order-id-badge">#${escapeHtml(order.orderId)}</span>
-                            <div style="font-size: 0.76rem; color: #888; margin-top: 4px;">Booked on: ${escapeHtml(order.date || 'Recently')}</div>
+                            <div style="font-size: 0.76rem; color: #888; margin-top: 4px;">
+                                <i class="fa-regular fa-calendar-check"></i> Booked on: ${escapeHtml(order.date || 'Recently')}
+                            </div>
                         </div>
                         <div class="track-order-status-pill ${statusPillClass}">
                             <i class="fa-solid ${statusIcon}"></i>
@@ -782,15 +976,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                         </div>
 
                         <div class="track-step ${step3Done} ${step3Active}">
-                            <div class="step-node"><i class="fa-solid fa-screwdriver-wrench"></i></div>
-                            <span class="step-title">In Production</span>
-                            <span class="step-desc">Workshop Crafting</span>
+                            <div class="step-node"><i class="fa-solid fa-hammer"></i></div>
+                            <span class="step-title">In Workshop</span>
+                            <span class="step-desc">Crafting & Polish</span>
                         </div>
 
                         <div class="track-step ${step4Done} ${step4Active}">
-                            <div class="step-node"><i class="fa-solid fa-truck"></i></div>
+                            <div class="step-node"><i class="fa-solid fa-truck-fast"></i></div>
                             <span class="step-title">Delivered</span>
-                            <span class="step-desc">To Your Home</span>
+                            <span class="step-desc">At Doorstep</span>
                         </div>
                     </div>
 
@@ -802,21 +996,28 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <div>${noteText}</div>
                     </div>
 
-                    <!-- Item Details Summary -->
+                    <!-- Item Details Summary with Real Furniture Thumbnail -->
                     <div class="track-item-details">
-                        <div style="font-size: 1.8rem; color: var(--primary);">
-                            <i class="fa-solid fa-couch"></i>
+                        <div class="fk-order-thumb-wrap">
+                            ${itemPhoto 
+                                ? `<img src="${escapeHtml(itemPhoto)}" class="fk-order-thumb-img" alt="${escapeHtml(order.furnitureTitle)}">` 
+                                : `<i class="fa-solid fa-couch fk-order-thumb-icon"></i>`
+                            }
                         </div>
                         <div class="track-item-info" style="flex: 1;">
-                            <h5>${escapeHtml(order.furnitureTitle)}</h5>
-                            <p><strong>Quantity:</strong> ${order.quantity || 1} • <strong>Total:</strong> NPR रू ${(Math.round(Number(order.totalAmount || order.furniturePrice || 0) * NPR_PER_INR)).toLocaleString("en-IN")} <span style="font-size: 0.78rem; color: #888;">(≈ ₹ ${Number(order.totalAmount || order.furniturePrice || 0).toLocaleString("en-IN")} INR)</span></p>
-                            <p style="font-size: 0.76rem; color: #777;">
-                                <i class="fa-solid fa-location-dot"></i> Delivery to: ${escapeHtml(order.customerCity || '')} (${escapeHtml(order.customerAddress || 'Customer Address')})
+                            <h5 style="font-size: 1rem; margin-bottom: 4px; color: #2b170c;">${escapeHtml(order.furnitureTitle)}</h5>
+                            <p style="margin-bottom: 4px;">
+                                <strong>Quantity:</strong> ${order.quantity || 1} • 
+                                <strong>Total:</strong> <span style="color: var(--primary); font-weight: 800;">NPR रू ${(Math.round(Number(order.totalAmount || order.furniturePrice || 0) * NPR_PER_INR)).toLocaleString("en-IN")}</span> 
+                                <span style="font-size: 0.78rem; color: #888;">(≈ ₹ ${Number(order.totalAmount || order.furniturePrice || 0).toLocaleString("en-IN")} INR)</span>
+                            </p>
+                            <p style="font-size: 0.78rem; color: #666; line-height: 1.4;">
+                                <i class="fa-solid fa-location-dot" style="color: #e65100;"></i> <strong>Delivery Address:</strong> ${escapeHtml(order.customerAddress || 'Customer Address')}, ${escapeHtml(order.customerCity || '')}
                             </p>
                         </div>
                     </div>
 
-                    <!-- Direct Actions -->
+                    <!-- Direct Actions (WhatsApp, Workshop Call & Print) -->
                     <div class="track-help-actions">
                         <a href="${waInquiryLink}" target="_blank" class="btn btn-primary" style="background: #25d366; border-color: #25d366;">
                             <i class="fa-brands fa-whatsapp"></i> Chat on WhatsApp

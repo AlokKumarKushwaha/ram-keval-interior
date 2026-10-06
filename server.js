@@ -679,6 +679,7 @@ const server = http.createServer(async (req, res) => {
                 furnitureId: body.furnitureId || '',
                 furnitureTitle: body.furnitureTitle || 'Custom Furniture Order',
                 furniturePrice: Number(body.furniturePrice) || 0,
+                furnitureImage: body.furnitureImage || '',
                 quantity: Number(body.quantity) || 1,
                 totalAmount: (Number(body.furniturePrice) || 0) * (Number(body.quantity) || 1),
                 status: 'Pending',

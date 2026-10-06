@@ -99,7 +99,7 @@
             <div style="display: flex; align-items: center; gap: 16px; font-size: 0.82rem; flex-wrap: wrap;">
                 <span><i class="fa-solid fa-phone" style="color: #d4a373;"></i> <strong>+977 9823471413 / +977 9823725730</strong> (For Nepal)</span>
                 <span><i class="fa-solid fa-envelope" style="color: #d4a373;"></i> ramashisha55@gmail.com</span>
-                <a href="#track" id="topTrackLink" class="top-track-btn" style="color: #ffd166; font-weight: 600; text-decoration: underline;"><i class="fa-solid fa-truck-fast"></i> Track Order Status</a>
+                <a href="#orders" id="topTrackLink" class="top-track-btn" style="color: #ffd166; font-weight: 600; text-decoration: underline;"><i class="fa-solid fa-box-open"></i> My Orders (मेरे ऑर्डर्स)</a>
             </div>
         </div>
     </div>
@@ -124,10 +124,13 @@
                     <li><a href="#locations">Work Locations</a></li>
                     <li><a href="#visiting-card">Visiting Card</a></li>
                     <li><a href="#contact">Contact</a></li>
-                    <li><a href="#track" id="navTrackOrderLink" style="color: var(--primary); font-weight: 700;"><i class="fa-solid fa-truck-fast"></i> Track Order</a></li>
+                    <li><a href="#orders" id="navTrackOrderLink" style="color: var(--primary); font-weight: 700;"><i class="fa-solid fa-box-open"></i> My Orders</a></li>
                     <li class="mobile-only-menu-item">
-                        <button id="mobileTrackOrderBtn" class="btn btn-outline" style="color: var(--primary); border-color: var(--accent); width: 100%; margin-top: 8px; padding: 10px; font-weight: 600;">
-                            <i class="fa-solid fa-truck-fast"></i> Track Order Status / आर्डर ट्रैक करें
+                        <button id="mobileTrackOrderBtn" class="btn btn-outline" style="color: var(--primary); border-color: var(--accent); width: 100%; margin-top: 8px; padding: 11px 14px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-box-open" style="font-size: 1.1rem;"></i> My Orders (मेरे ऑर्डर्स)
+                            </span>
+                            <span id="mobileOrdersBadge" class="order-counter-badge" style="display: none;">0</span>
                         </button>
                     </li>
                     <li class="mobile-only-menu-item">
@@ -139,7 +142,53 @@
             </nav>
 
             <div class="nav-cta-group">
-                <button id="navTrackCtaBtn" class="btn btn-outline nav-track-btn"><i class="fa-solid fa-truck-fast"></i> Track Order</button>
+                <!-- Flipkart-style Account & Orders Dropdown -->
+                <div class="nav-account-dropdown-wrapper" id="navAccountWrapper">
+                    <button id="navTrackCtaBtn" class="btn btn-outline nav-orders-btn" title="View Your Furniture Orders">
+                        <i class="fa-solid fa-box-open" style="color: var(--primary); font-size: 1.05rem;"></i>
+                        <span id="navAccountLabel">My Orders</span>
+                        <span id="navOrdersBadge" class="order-counter-badge" style="display: none;">0</span>
+                        <i class="fa-solid fa-chevron-down nav-dropdown-caret"></i>
+                    </button>
+                    <div class="account-dropdown-menu" id="accountDropdownMenu">
+                        <div class="account-menu-header">
+                            <div class="account-avatar-icon"><i class="fa-solid fa-user"></i></div>
+                            <div class="account-user-info">
+                                <span class="account-greeting">Namaste!</span>
+                                <span class="account-user-name" id="dropdownUserName">Guest Customer</span>
+                                <span class="account-user-phone" id="dropdownUserPhone">No phone linked</span>
+                            </div>
+                        </div>
+                        <ul class="account-menu-list">
+                            <li>
+                                <button type="button" class="account-menu-item" id="menuMyOrdersBtn">
+                                    <i class="fa-solid fa-box-open" style="color: #1976d2;"></i>
+                                    <span>Orders (मेरे ऑर्डर्स)</span>
+                                    <span id="menuOrdersCountTag" class="menu-count-pill" style="display: none;">0</span>
+                                </button>
+                            </li>
+                            <li>
+                                <button type="button" class="account-menu-item" id="menuSavedAddressBtn">
+                                    <i class="fa-solid fa-location-dot" style="color: #e65100;"></i>
+                                    <span>Saved Delivery Address</span>
+                                </button>
+                            </li>
+                            <li>
+                                <a href="https://wa.me/9779823471413?text=Namaste%20Ram%20Keval%20ji,%20I%20have%20an%20inquiry%20about%20my%20furniture%20order." target="_blank" class="account-menu-item">
+                                    <i class="fa-brands fa-whatsapp" style="color: #25d366;"></i>
+                                    <span>Help & WhatsApp Support</span>
+                                </a>
+                            </li>
+                            <li class="menu-divider"></li>
+                            <li>
+                                <button type="button" class="account-menu-item" id="menuSwitchPhoneBtn">
+                                    <i class="fa-solid fa-arrow-right-arrow-left" style="color: #7b1fa2;"></i>
+                                    <span id="switchPhoneBtnLabel">Switch / Enter Mobile No.</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
                 <a href="#catalog" class="btn btn-primary nav-btn-desktop"><i class="fa-solid fa-couch"></i> Browse & Order</a>
                 <a href="https://wa.me/9779823471413?text=Namaste%20Ram%20Keval%20ji,%20I%20want%20to%20inquire%20about%20your%20furniture%20and%20interior%20work." target="_blank" class="btn btn-outline nav-wa-btn" style="color: #25d366; border-color: #25d366;">
                     <i class="fa-brands fa-whatsapp"></i> <span class="wa-btn-label">WhatsApp</span>
@@ -512,6 +561,7 @@
                     <input type="hidden" id="orderFurnitureId">
                     <input type="hidden" id="orderFurnitureTitle">
                     <input type="hidden" id="orderFurniturePrice">
+                    <input type="hidden" id="orderFurnitureImage">
 
                     <div class="form-row-2">
                         <div class="form-group">
@@ -578,61 +628,110 @@
                     <div><strong>Item:</strong> <span id="successItem"></span></div>
                     <div><strong>Total:</strong> <span id="successTotal" style="color: var(--primary); font-weight: bold;"></span></div>
                     <div><strong>Payment:</strong> <span style="color: #2e7d32; font-weight: 600;">Cash / Pay on Delivery</span></div>
+                    <div style="margin-top: 6px; font-size: 0.8rem; color: #2e7d32; font-weight: 600;">
+                        <i class="fa-solid fa-circle-check"></i> Saved to your Account! Token yaad rakhne ki jarurat nahi hai.
+                    </div>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="btn btn-primary" id="successTrackLiveBtn" style="background: var(--primary); border-color: var(--primary); font-weight: 700; padding: 12px;">
+                        <i class="fa-solid fa-box-open"></i> View in My Orders (मेरे ऑर्डर्स में देखें)
+                    </button>
                     <a href="#" id="sendWaOrderBtn" target="_blank" class="btn btn-primary" style="background: #25d366; border-color: #25d366;">
                         <i class="fa-brands fa-whatsapp"></i> Send Order Copy on WhatsApp
                     </a>
-                    <button class="btn btn-outline" id="successTrackLiveBtn" style="border-color: var(--primary); color: var(--primary); font-weight: 700;">
-                        <i class="fa-solid fa-truck-fast"></i> Track Order Status Live (लाइव स्टेटस देखें)
-                    </button>
                     <button class="btn btn-outline" id="closeSuccessBtn">Continue Browsing</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Customer Order Tracking Modal -->
+    <!-- Flipkart-Style Customer "My Orders" Modal -->
     <div class="modal-overlay" id="trackOrderModal">
-        <div class="modal-box track-modal-box">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-truck-fast"></i> Track Furniture Order Status</h3>
-                <button class="modal-close-btn" id="closeTrackModalBtn">&times;</button>
+        <div class="modal-box track-modal-box" style="max-width: 680px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #2b170c, #4a2711); color: #fff; padding: 16px 20px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 36px; height: 36px; background: rgba(212, 163, 115, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #d4a373;">
+                        <i class="fa-solid fa-box-open" style="font-size: 1.2rem;"></i>
+                    </div>
+                    <div>
+                        <h3 style="color: #fff; margin: 0; font-size: 1.15rem;">My Orders (मेरे ऑर्डर्स)</h3>
+                        <p style="color: #d4a373; margin: 0; font-size: 0.78rem;">Ram Keval Interior • Order Tracking & Account</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="closeTrackModalBtn" style="color: #fff;">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 22px;">
-                <!-- Search Box -->
-                <div class="track-search-wrapper">
-                    <p style="font-size: 0.9rem; color: #555; margin-bottom: 12px;">
-                        Check real-time craftsmanship & delivery status. Enter your <strong>Order ID</strong> (e.g. <code>RKI-1001</code>) or your <strong>Mobile Phone Number</strong>:
-                    </p>
-                    <form id="trackOrderForm" style="display: flex; gap: 8px; margin-bottom: 16px;">
-                        <input type="text" id="trackOrderInput" placeholder="Enter Order ID (e.g. RKI-1001) or Phone" required style="flex: 1; padding: 12px 14px; border: 2px solid var(--accent); border-radius: 8px; font-size: 0.92rem;">
-                        <button type="submit" class="btn btn-primary" id="trackSubmitBtn" style="padding: 12px 20px; font-weight: 600; white-space: nowrap;">
-                            <i class="fa-solid fa-magnifying-glass"></i> Track
-                        </button>
-                    </form>
+
+            <div class="modal-body" style="padding: 20px; overflow-y: auto; flex: 1;">
+                <!-- Customer Profile Bar (Shown when mobile number is registered) -->
+                <div id="custProfileStrip" class="customer-profile-strip" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="cust-profile-avatar">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.95rem; color: #2b170c;" id="profileCustName">Customer</div>
+                            <div style="font-size: 0.8rem; color: #666;">
+                                <i class="fa-solid fa-phone" style="color: var(--primary);"></i> <span id="profileCustPhone">+91 XXXXXXXX</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="btnSwitchPhone" class="btn-switch-account" title="Dusra mobile number dalein">
+                        <i class="fa-solid fa-arrow-right-arrow-left"></i> Change No.
+                    </button>
                 </div>
 
-                <!-- Recent Order Quick Access -->
-                <div id="recentOrderQuickBox" style="display: none; margin-bottom: 16px; background: #faf5ee; padding: 10px 14px; border-radius: 8px; border: 1px dashed var(--accent); font-size: 0.85rem; justify-content: space-between; align-items: center;">
-                    <span><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> Your Recent Order: <strong id="recentOrderIdTag">RKI-0000</strong></span>
-                    <button type="button" id="quickTrackRecentBtn" style="background: var(--primary); color: #fff; border: none; padding: 4px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 0.78rem;">Track Now</button>
+                <!-- Phone / Order Search Card (Shown when no phone or user wants to switch) -->
+                <div id="phoneLookupSection" class="phone-lookup-card">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <i class="fa-solid fa-mobile-screen-button" style="color: var(--primary); font-size: 1.1rem;"></i>
+                        <strong style="color: #2b170c; font-size: 0.95rem;">Apna Mobile Number ya Order ID Dalein:</strong>
+                    </div>
+                    <p style="font-size: 0.82rem; color: #666; margin-bottom: 12px;">
+                        Bina kisi password ya token ke apne sabhi furniture orders dekhne ke liye apna <strong>10-digit Mobile Number</strong> enter karein:
+                    </p>
+                    <form id="trackOrderForm" style="display: flex; gap: 8px;">
+                        <input type="text" id="trackOrderInput" placeholder="Enter Mobile Number (e.g. 9823471413)" required style="flex: 1; padding: 11px 14px; border: 2px solid var(--accent); border-radius: 8px; font-size: 0.92rem;">
+                        <button type="submit" class="btn btn-primary" id="trackSubmitBtn" style="padding: 11px 18px; font-weight: 600; white-space: nowrap;">
+                            <i class="fa-solid fa-magnifying-glass"></i> View Orders
+                        </button>
+                    </form>
                 </div>
 
                 <!-- Loader -->
                 <div id="trackLoader" style="display: none; text-align: center; padding: 30px;">
                     <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.2rem; color: var(--primary);"></i>
-                    <p style="color: #666; margin-top: 10px; font-size: 0.88rem;">Connecting with Ram Keval workshop database...</p>
+                    <p style="color: #666; margin-top: 10px; font-size: 0.88rem;">Connecting with workshop database...</p>
                 </div>
 
                 <!-- Error Box -->
                 <div id="trackErrorMsg" style="display: none; background: #ffebee; border: 1px solid #ffcdd2; color: #c62828; padding: 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.88rem; text-align: center;">
-                    <i class="fa-solid fa-circle-exclamation"></i> <span id="trackErrorText">No order found matching this Order ID or Phone number.</span>
+                    <i class="fa-solid fa-circle-exclamation"></i> <span id="trackErrorText">No order found matching this mobile number.</span>
                 </div>
 
-                <!-- Results Container Injected Dynamically -->
+                <!-- Results Container Injected Dynamically (Flipkart-style order cards) -->
                 <div id="trackResultContainer" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Saved Address Modal -->
+    <div class="modal-overlay" id="savedAddressModal">
+        <div class="modal-box" style="max-width: 460px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-location-dot" style="color: #e65100;"></i> Saved Delivery Address</h3>
+                <button class="modal-close-btn" id="closeSavedAddressModalBtn">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div id="savedAddressCard" style="background: #faf7f2; border: 1px solid #e0d5c7; border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; font-size: 1rem; color: #2b170c; margin-bottom: 4px;" id="savedAddrName">Customer Name</div>
+                    <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px;"><i class="fa-solid fa-phone"></i> <span id="savedAddrPhone">+91 XXXXXXXX</span></div>
+                    <div style="font-size: 0.88rem; color: #333; line-height: 1.5; margin-bottom: 6px;"><i class="fa-solid fa-house"></i> <span id="savedAddrText">No address saved yet.</span></div>
+                    <div style="font-size: 0.82rem; color: #8b5e3c; font-weight: 600;"><i class="fa-solid fa-city"></i> <span id="savedAddrCity">Kathmandu, Nepal</span></div>
+                </div>
+                <button type="button" class="btn btn-outline" id="closeSavedAddressBtn" style="width: 100%; padding: 10px;">
+                    Close
+                </button>
             </div>
         </div>
     </div>
@@ -692,8 +791,11 @@
 
             <div class="footer-bottom">
                 <div>&copy; 2026 Ram Keval Interior. All rights reserved. Est. 1985.</div>
-                <div style="font-size: 0.86rem; color: #a89f91;">
-                    Website Developer: <a href="https://wa.me/918423406830?text=Hello%20Alok,%20I%20saw%20the%20Ram%20Keval%20Interior%20website%20developed%20by%20you%20and%20want%20to%20connect." target="_blank" title="Chat with Alok Kushwaha on WhatsApp" style="color: #d4a373; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">Alok Kushwaha <i class="fa-brands fa-whatsapp" style="color: #25d366; font-size: 1.15rem;"></i></a>
+                <div style="font-size: 0.9rem; color: #e2d9cf; display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span><i class="fa-solid fa-code" style="color: #d4a373;"></i> Website Developer Contact:</span>
+                    <a href="https://wa.me/918423406830?text=Hello%20Alok,%20I%20saw%20the%20Ram%20Keval%20Interior%20website%20and%20want%20to%20connect%20for%20website%20development." target="_blank" title="Contact Website Developer on WhatsApp" style="color: #25d366; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: rgba(37, 211, 102, 0.12); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(37, 211, 102, 0.35);">
+                        <i class="fa-brands fa-whatsapp" style="font-size: 1.2rem;"></i> +91 8423406830
+                    </a>
                 </div>
             </div>
         </div>
