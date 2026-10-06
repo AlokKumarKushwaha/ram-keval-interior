@@ -12,9 +12,20 @@ const srcFounder = 'C:/Users/v9919/.gemini/antigravity/brain/bd1e58ae-19cd-4820-
 const srcCard = 'C:/Users/v9919/.gemini/antigravity/brain/bd1e58ae-19cd-4820-ba4a-ce5bceb2b0b9/.user_uploaded/media_1790831778441.jpg';
 
 try {
+    const existingLogo = path.join(targetDir, 'logo.jpg');
     if (fs.existsSync(srcLogo)) {
         fs.copyFileSync(srcLogo, path.join(targetDir, 'logo.jpg'));
-        console.log('✓ Copied logo.jpg');
+        fs.copyFileSync(srcLogo, path.join(__dirname, 'favicon.ico'));
+        fs.copyFileSync(srcLogo, path.join(__dirname, 'favicon.png'));
+        fs.copyFileSync(srcLogo, path.join(targetDir, 'favicon.ico'));
+        fs.copyFileSync(srcLogo, path.join(targetDir, 'favicon.png'));
+        console.log('✓ Copied logo.jpg and generated favicon.ico / favicon.png');
+    } else if (fs.existsSync(existingLogo)) {
+        fs.copyFileSync(existingLogo, path.join(__dirname, 'favicon.ico'));
+        fs.copyFileSync(existingLogo, path.join(__dirname, 'favicon.png'));
+        fs.copyFileSync(existingLogo, path.join(targetDir, 'favicon.ico'));
+        fs.copyFileSync(existingLogo, path.join(targetDir, 'favicon.png'));
+        console.log('✓ Created favicon.ico and favicon.png from existing images/logo.jpg');
     } else {
         console.log('Logo source not found at:', srcLogo);
     }
