@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadProducts();
     await loadSettings();
 
-    // Fetch Products Function (Hybrid Server + Local Custom Persistence)
+    // Fetch Products Function (Server Master + Offline Fallback)
     async function loadProducts() {
         let serverProducts = [];
         try {
@@ -79,34 +79,21 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log("Server waking up / offline fallback active...");
         }
 
-        // Merge server products with local custom products
-        const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
-        const allLocal = Storage.getProducts();
+        const localDeleted = JSON.parse(localStorage.getItem("rki_deleted_products") || "[]");
 
-        const merged = [...serverProducts];
-        localCustom.forEach(cp => {
-            if (!merged.some(p => p.id === cp.id)) {
-                merged.unshift(cp);
-            }
-        });
+        if (serverProducts.length > 0) {
+            // Server responded with live master catalog
+            products = serverProducts.filter(p => !localDeleted.includes(p.id));
+            Storage.saveProducts(products);
 
-        if (merged.length > 0) {
-            products = merged;
-            Storage.saveProducts(merged);
+            // Clean local custom products to remove any deleted items
+            let localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
+            localCustom = localCustom.filter(cp => !localDeleted.includes(cp.id) && products.some(p => p.id === cp.id));
+            localStorage.setItem("rki_custom_products", JSON.stringify(localCustom));
         } else {
-            products = allLocal;
-        }
-
-        // Background Cloud Re-hydration: If server restarted and lost custom products, re-sync them!
-        if (serverProducts.length > 0 && localCustom.length > 0) {
-            const missingOnServer = localCustom.filter(cp => !serverProducts.some(p => p.id === cp.id));
-            if (missingOnServer.length > 0) {
-                fetch("/api/products/sync", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ products: missingOnServer })
-                }).catch(() => {});
-            }
+            // Offline fallback: Use cached products excluding deleted ones
+            const allLocal = Storage.getProducts();
+            products = allLocal.filter(p => !localDeleted.includes(p.id));
         }
 
         renderProducts();

@@ -22,6 +22,7 @@ if (!fs.existsSync(PUBLIC_DIR)) fs.mkdirSync(PUBLIC_DIR, { recursive: true });
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+const DELETED_PRODUCTS_FILE = path.join(DATA_DIR, 'deleted_products.json');
 
 // --- Seed Data Defaults ---
 const DEFAULT_SETTINGS = {
@@ -190,6 +191,7 @@ const DEFAULT_ORDERS = [
 if (!fs.existsSync(SETTINGS_FILE)) fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2));
 if (!fs.existsSync(PRODUCTS_FILE)) fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(DEFAULT_PRODUCTS, null, 2));
 if (!fs.existsSync(ORDERS_FILE)) fs.writeFileSync(ORDERS_FILE, JSON.stringify(DEFAULT_ORDERS, null, 2));
+if (!fs.existsSync(DELETED_PRODUCTS_FILE)) fs.writeFileSync(DELETED_PRODUCTS_FILE, JSON.stringify([], null, 2));
 
 // Helper DB Read/Write
 function readJSON(file, fallback) {
@@ -524,10 +526,13 @@ const server = http.createServer(async (req, res) => {
         }
 
         const products = readJSON(PRODUCTS_FILE, DEFAULT_PRODUCTS);
+        const deletedIds = readJSON(DELETED_PRODUCTS_FILE, []);
         let addedCount = 0;
 
         incoming.forEach(inc => {
             if (!inc.id || !inc.title) return;
+            // CRITICAL: If this item was deleted by the user/client, NEVER resurrect it!
+            if (deletedIds.includes(inc.id)) return;
             const idx = products.findIndex(p => p.id === inc.id);
 
             // Re-create image file in /uploads/ if imageData base64 exists
@@ -646,9 +651,23 @@ const server = http.createServer(async (req, res) => {
         if (method === 'DELETE') {
             const deleted = products.splice(index, 1)[0];
             writeJSON(PRODUCTS_FILE, products);
+
+            // Record deleted product ID in permanent tombstone list
+            const deletedIds = readJSON(DELETED_PRODUCTS_FILE, []);
+            if (!deletedIds.includes(prodId)) {
+                deletedIds.push(prodId);
+                writeJSON(DELETED_PRODUCTS_FILE, deletedIds);
+            }
+
             syncToGitHub(products);
             return sendJSON(res, 200, { success: true, message: 'Deleted successfully', deleted });
         }
+    }
+
+    // Deleted Products List Endpoint
+    if (pathname === '/api/products/deleted' && method === 'GET') {
+        const deletedIds = readJSON(DELETED_PRODUCTS_FILE, []);
+        return sendJSON(res, 200, deletedIds);
     }
 
     // 3. Orders API
@@ -870,6 +889,7 @@ const server = http.createServer(async (req, res) => {
         const body = await parseBody(req);
         if (body.products && Array.isArray(body.products)) {
             writeJSON(PRODUCTS_FILE, body.products);
+            writeJSON(DELETED_PRODUCTS_FILE, []);
         }
         if (body.orders && Array.isArray(body.orders)) {
             writeJSON(ORDERS_FILE, body.orders);

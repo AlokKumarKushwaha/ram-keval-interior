@@ -167,13 +167,28 @@ document.addEventListener("DOMContentLoaded", () => {
             if (prodRes.ok) {
                 products = await prodRes.json();
 
-                // AUTO-REHYDRATE ENGINE:
-                // Check if any custom products created by admin are missing from the server (e.g. after Render restart)
+                // AUTO-REHYDRATE ENGINE (Protected against deleted products):
                 const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
-                if (localCustom.length > 0) {
-                    const missingOnServer = localCustom.filter(cp => !products.some(sp => sp.id === cp.id));
+                const localDeleted = JSON.parse(localStorage.getItem("rki_deleted_products") || "[]");
+
+                // Fetch server deleted IDs to maintain unified tombstone list
+                let serverDeleted = [];
+                try {
+                    const delRes = await fetch("/api/products/deleted");
+                    if (delRes.ok) serverDeleted = await delRes.json();
+                } catch(e) {}
+
+                const allDeleted = Array.from(new Set([...localDeleted, ...serverDeleted]));
+                localStorage.setItem("rki_deleted_products", JSON.stringify(allDeleted));
+
+                // Clean up localCustom and products: Permanently remove any deleted items!
+                const activeLocalCustom = localCustom.filter(cp => !allDeleted.includes(cp.id));
+                localStorage.setItem("rki_custom_products", JSON.stringify(activeLocalCustom));
+                products = products.filter(p => !allDeleted.includes(p.id));
+
+                if (activeLocalCustom.length > 0) {
+                    const missingOnServer = activeLocalCustom.filter(cp => !products.some(sp => sp.id === cp.id));
                     if (missingOnServer.length > 0) {
-                        console.log(`Auto-rehydrating ${missingOnServer.length} custom products to server...`);
                         try {
                             await fetch("/api/products/sync", {
                                 method: "POST",
@@ -183,7 +198,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         } catch (syncErr) {
                             console.warn("Auto-sync deferred:", syncErr);
                         }
-                        // Instantly include them in active products array
                         missingOnServer.forEach(cp => {
                             if (!products.some(sp => sp.id === cp.id)) {
                                 products.unshift(cp);
@@ -1074,17 +1088,29 @@ document.addEventListener("DOMContentLoaded", () => {
         const prod = products.find(p => p.id === productId);
         if (!prod) return;
 
-        if (confirm(`Are you sure you want to delete "${prod.title}"? (क्या आप वाकई इसे हटाना चाहते हैं?)`)) {
-            // 1. Remove from local custom storage
+        if (confirm(`Are you sure you want to permanently delete "${prod.title}"?\nक्या आप वाकई इस फर्नीचर को हमेशा के लिए हटाना चाहते हैं?`)) {
+            // 1. Add to permanent local deleted tombstone list
+            let localDeleted = JSON.parse(localStorage.getItem("rki_deleted_products") || "[]");
+            if (!localDeleted.includes(productId)) {
+                localDeleted.push(productId);
+                localStorage.setItem("rki_deleted_products", JSON.stringify(localDeleted));
+            }
+
+            // 2. Remove from local custom storage
             let localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
             localCustom = localCustom.filter(p => p.id !== productId);
             localStorage.setItem("rki_custom_products", JSON.stringify(localCustom));
 
-            // 2. Remove from general storage
+            // 3. Remove from general storage
             const local = Storage.getProducts().filter(p => p.id !== productId);
             Storage.saveProducts(local);
 
-            // 3. Send DELETE to server
+            // 4. Immediately remove from current memory array and update UI
+            products = products.filter(p => p.id !== productId);
+            renderProductsTable();
+            if (statTotalProducts) statTotalProducts.textContent = products.length;
+
+            // 5. Send DELETE to server
             try {
                 await fetch(`/api/products/${productId}`, { method: "DELETE" });
             } catch (err) {
@@ -1092,7 +1118,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             await refreshAllData();
-            alert(`"${prod.title}" has been deleted.`);
+            alert(`"${prod.title}" has been permanently deleted.\nफर्नीचर हमेशा के लिए हटा दिया गया है।`);
         }
     }
 
