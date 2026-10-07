@@ -569,8 +569,14 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 200, { success: true, count: addedCount, total: products.length });
     }
 
+    // Deleted Products List Endpoint (Tombstone Registry)
+    if (pathname === '/api/products/deleted' && method === 'GET') {
+        const deletedIds = readJSON(DELETED_PRODUCTS_FILE, []);
+        return sendJSON(res, 200, deletedIds);
+    }
+
     // Product by ID (PUT / DELETE)
-    if (pathname.startsWith('/api/products/')) {
+    if (pathname.startsWith('/api/products/') && pathname !== '/api/products/deleted') {
         const prodId = pathname.replace('/api/products/', '');
         const products = readJSON(PRODUCTS_FILE, DEFAULT_PRODUCTS);
         const index = products.findIndex(p => p.id === prodId);
@@ -664,11 +670,6 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
-    // Deleted Products List Endpoint
-    if (pathname === '/api/products/deleted' && method === 'GET') {
-        const deletedIds = readJSON(DELETED_PRODUCTS_FILE, []);
-        return sendJSON(res, 200, deletedIds);
-    }
 
     // 3. Orders API
     if (pathname === '/api/orders') {
