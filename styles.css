@@ -2943,12 +2943,26 @@ img {
         grid-template-columns: 1fr;
         gap: 30px;
     }
+    .footer-bottom {
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        gap: 14px !important;
+        padding-top: 18px !important;
+        padding-bottom: 35px !important;
+    }
+    .footer-dev-badge-wrap {
+        justify-content: center !important;
+        text-align: center !important;
+    }
     .floating-wa-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 1.6rem;
-        bottom: 16px;
-        right: 16px;
+        width: 52px;
+        height: 52px;
+        font-size: 1.65rem;
+        bottom: 85px; /* Shifted up so it never covers footer developer credit and photo */
+        right: 18px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 12px rgba(37, 211, 102, 0.45);
     }
 
     /* ==========================================================================
