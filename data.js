@@ -141,53 +141,7 @@ const INITIAL_PRODUCTS = [
     }
 ];
 
-const INITIAL_ORDERS = [
-    {
-        orderId: "RKI-8901",
-        date: "2026-09-28 14:30",
-        customerName: "Suman Shrestha",
-        customerPhone: "+977-9841234567",
-        customerCity: "Kathmandu",
-        customerAddress: "Sano Gaucharan, Near KL Residency, Ward 5",
-        furnitureId: "rk-101",
-        furnitureTitle: "Royal Teak King Size Bed with Tufted Headboard",
-        furniturePrice: 85000,
-        quantity: 1,
-        totalAmount: 85000,
-        status: "Confirmed",
-        notes: "Please call 1 hour before visiting for measurement."
-    },
-    {
-        orderId: "RKI-8902",
-        date: "2026-09-30 11:15",
-        customerName: "Rajesh Kumar Verma",
-        customerPhone: "+91-9450123890",
-        customerCity: "Gorakhpur",
-        customerAddress: "Civil Lines, Near Golghar Market, House #42",
-        furnitureId: "rk-102",
-        furnitureTitle: "Handcrafted 6-Seater Sheesham Dining Table Set",
-        furniturePrice: 68000,
-        quantity: 1,
-        totalAmount: 68000,
-        status: "Pending",
-        notes: "Want dark walnut finish instead of honey gloss if possible."
-    },
-    {
-        orderId: "RKI-8903",
-        date: "2026-10-01 09:45",
-        customerName: "Pooja Reddy",
-        customerPhone: "+91-9885091234",
-        customerCity: "Hyderabad",
-        customerAddress: "Jubilee Hills, Road No. 36, Flat 402",
-        furnitureId: "rk-104",
-        furnitureTitle: "Modular Acrylic Kitchen Cabinetry System",
-        furniturePrice: 145000,
-        quantity: 1,
-        totalAmount: 145000,
-        status: "In Production",
-        notes: "Site visit and kitchen layout blueprint requested."
-    }
-];
+const INITIAL_ORDERS = [];
 
 // Helper functions for LocalStorage persistence
 const Storage = {
@@ -223,14 +177,13 @@ const Storage = {
     },
     getOrders() {
         const data = localStorage.getItem("rki_orders");
-        if (!data) {
-            try { localStorage.setItem("rki_orders", JSON.stringify(INITIAL_ORDERS)); } catch (e) {}
-            return INITIAL_ORDERS;
-        }
+        if (!data) return [];
         try {
-            return JSON.parse(data);
+            const list = JSON.parse(data);
+            const deleted = JSON.parse(localStorage.getItem("rki_deleted_orders") || "[]");
+            return Array.isArray(list) ? list.filter(o => !deleted.includes(o.orderId)) : [];
         } catch (e) {
-            return INITIAL_ORDERS;
+            return [];
         }
     },
     saveOrders(orders) {

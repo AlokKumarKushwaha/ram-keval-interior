@@ -210,22 +210,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (ordRes.ok) {
                 orders = await ordRes.json();
-                // Auto-sync any local orders that were wiped on server restart
-                const localOrders = Storage.getOrders();
-                const missingOrders = localOrders.filter(lo => !orders.some(so => so.orderId === lo.orderId));
-                if (missingOrders.length > 0) {
-                    try {
-                        await fetch("/api/orders/sync", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ orders: missingOrders })
-                        });
-                    } catch (e) {}
-                    missingOrders.forEach(mo => {
-                        if (!orders.some(so => so.orderId === mo.orderId)) orders.unshift(mo);
-                    });
-                }
-                Storage.saveOrders(orders);
+                // Fetch server deleted order IDs to maintain unified tombstone list
+                const localDeletedOrders = JSON.parse(localStorage.getItem("rki_deleted_orders") || "[]");
+                let serverDeletedOrders = [];
+                try {
+                    const delOrdRes = await fetch("/api/orders/deleted");
+                    if (delOrdRes.ok) serverDeletedOrders = await delOrdRes.json();
+                } catch(e) {}
+                const allDeletedOrders = Array.from(new Set([...localDeletedOrders, ...serverDeletedOrders]));
+                localStorage.setItem("rki_deleted_orders", JSON.stringify(allDeletedOrders));
+
+                // Clean up orders and local storage: permanently filter out any deleted orders!
+                orders = orders.filter(o => !allDeletedOrders.includes(o.orderId));
+                const localOrders = Storage.getOrders().filter(o => !allDeletedOrders.includes(o.orderId));
+                Storage.saveOrders(localOrders);
             }
 
             if (setRes.ok) settings = await setRes.json();
@@ -395,6 +393,22 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
+                // 1. Immediately record in permanent deleted orders tombstone list
+                const localDeleted = JSON.parse(localStorage.getItem("rki_deleted_orders") || "[]");
+                if (!localDeleted.includes(orderId)) {
+                    localDeleted.push(orderId);
+                    localStorage.setItem("rki_deleted_orders", JSON.stringify(localDeleted));
+                }
+
+                // 2. Immediately remove from local memory & local storage
+                orders = orders.filter(o => o.orderId !== orderId);
+                const localOrders = Storage.getOrders().filter(o => o.orderId !== orderId);
+                Storage.saveOrders(localOrders);
+
+                // 3. Immediately re-render table to feel instant
+                renderOrdersTable();
+
+                // 4. Send DELETE to backend
                 try {
                     await fetch(`/api/orders/${orderId}`, {
                         method: "DELETE"
@@ -402,11 +416,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 } catch (e) {
                     console.error("Delete order backend error:", e);
                 }
-
-                // Update LocalStorage fallback
-                const localOrders = Storage.getOrders();
-                const filtered = localOrders.filter(o => o.orderId !== orderId);
-                Storage.saveOrders(filtered);
 
                 await refreshAllData();
             });
@@ -1294,6 +1303,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
 
                         // 2. Save locally
+                        localStorage.removeItem("rki_deleted_orders");
+                        localStorage.removeItem("rki_deleted_products");
                         if (backupData.products) Storage.saveProducts(backupData.products);
                         if (backupData.orders) Storage.saveOrders(backupData.orders);
                         if (backupData.shop) Storage.saveSettings(backupData.shop);

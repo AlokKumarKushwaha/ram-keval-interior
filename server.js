@@ -23,6 +23,7 @@ const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const DELETED_PRODUCTS_FILE = path.join(DATA_DIR, 'deleted_products.json');
+const DELETED_ORDERS_FILE = path.join(DATA_DIR, 'deleted_orders.json');
 
 // --- Seed Data Defaults ---
 const DEFAULT_SETTINGS = {
@@ -154,44 +155,14 @@ const DEFAULT_PRODUCTS = [
     }
 ];
 
-const DEFAULT_ORDERS = [
-    {
-        orderId: "RKI-8901",
-        date: "2026-09-28 14:30",
-        customerName: "Suman Shrestha",
-        customerPhone: "+977-9841234567",
-        customerCity: "Kathmandu, Nepal",
-        customerAddress: "Sano Gaucharan, Near KL Residency, Ward 5",
-        furnitureId: "rk-101",
-        furnitureTitle: "Royal Teak King Size Bed with Tufted Headboard",
-        furniturePrice: 85000,
-        quantity: 1,
-        totalAmount: 85000,
-        status: "Confirmed",
-        notes: "Please call 1 hour before visiting for measurement."
-    },
-    {
-        orderId: "RKI-8902",
-        date: "2026-09-30 11:15",
-        customerName: "Rajesh Kumar Verma",
-        customerPhone: "+91-9450123890",
-        customerCity: "Gorakhpur",
-        customerAddress: "Civil Lines, Near Golghar Market, House #42",
-        furnitureId: "rk-102",
-        furnitureTitle: "Handcrafted 6-Seater Sheesham Dining Table Set",
-        furniturePrice: 68000,
-        quantity: 1,
-        totalAmount: 68000,
-        status: "Pending",
-        notes: "Want dark walnut finish instead of honey gloss if possible."
-    }
-];
+const DEFAULT_ORDERS = [];
 
 // Seed storage files if not present
 if (!fs.existsSync(SETTINGS_FILE)) fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2));
 if (!fs.existsSync(PRODUCTS_FILE)) fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(DEFAULT_PRODUCTS, null, 2));
 if (!fs.existsSync(ORDERS_FILE)) fs.writeFileSync(ORDERS_FILE, JSON.stringify(DEFAULT_ORDERS, null, 2));
 if (!fs.existsSync(DELETED_PRODUCTS_FILE)) fs.writeFileSync(DELETED_PRODUCTS_FILE, JSON.stringify([], null, 2));
+if (!fs.existsSync(DELETED_ORDERS_FILE)) fs.writeFileSync(DELETED_ORDERS_FILE, JSON.stringify([], null, 2));
 
 // Helper DB Read/Write
 function readJSON(file, fallback) {
@@ -672,10 +643,16 @@ const server = http.createServer(async (req, res) => {
 
 
     // 3. Orders API
+    if (pathname === '/api/orders/deleted' && method === 'GET') {
+        const deletedIds = readJSON(DELETED_ORDERS_FILE, []);
+        return sendJSON(res, 200, deletedIds);
+    }
+
     if (pathname === '/api/orders') {
         if (method === 'GET') {
             const orders = readJSON(ORDERS_FILE, DEFAULT_ORDERS);
-            return sendJSON(res, 200, orders);
+            const deletedIds = readJSON(DELETED_ORDERS_FILE, []);
+            return sendJSON(res, 200, orders.filter(o => !deletedIds.includes(o.orderId)));
         }
 
         // Customer Places an Order (NO PAYMENT REQUIRED)
@@ -726,8 +703,10 @@ const server = http.createServer(async (req, res) => {
         const orders = readJSON(ORDERS_FILE, DEFAULT_ORDERS);
         let addedCount = 0;
 
+        const deletedIds = readJSON(DELETED_ORDERS_FILE, []);
         incoming.forEach(inc => {
             if (!inc.orderId) return;
+            if (deletedIds.includes(inc.orderId)) return;
             const idx = orders.findIndex(o => o.orderId === inc.orderId);
             if (idx >= 0) {
                 orders[idx] = inc;
@@ -791,19 +770,24 @@ const server = http.createServer(async (req, res) => {
     }
 
     // Delete Order by ID (DELETE /api/orders/:orderId)
-    if (pathname.startsWith('/api/orders/') && !pathname.endsWith('/status') && method === 'DELETE') {
-        const orderId = pathname.split('/')[3];
+    if (pathname.startsWith('/api/orders/') && !pathname.endsWith('/status') && pathname !== '/api/orders/deleted' && method === 'DELETE') {
+        const orderId = pathname.replace('/api/orders/', '');
         const orders = readJSON(ORDERS_FILE, DEFAULT_ORDERS);
         const index = orders.findIndex(o => o.orderId === orderId);
 
-        if (index === -1) {
-            return sendJSON(res, 404, { error: 'Order not found' });
+        const deletedIds = readJSON(DELETED_ORDERS_FILE, []);
+        if (!deletedIds.includes(orderId)) {
+            deletedIds.push(orderId);
+            writeJSON(DELETED_ORDERS_FILE, deletedIds);
         }
 
-        const deleted = orders.splice(index, 1)[0];
-        writeJSON(ORDERS_FILE, orders);
+        let deleted = null;
+        if (index !== -1) {
+            deleted = orders.splice(index, 1)[0];
+            writeJSON(ORDERS_FILE, orders);
+        }
         syncOrdersToGitHub(orders);
-        return sendJSON(res, 200, { success: true, message: 'Order deleted successfully', deleted });
+        return sendJSON(res, 200, { success: true, message: 'Order permanently deleted', deleted });
     }
 
     // 4. Stats Summary
@@ -894,6 +878,7 @@ const server = http.createServer(async (req, res) => {
         }
         if (body.orders && Array.isArray(body.orders)) {
             writeJSON(ORDERS_FILE, body.orders);
+            writeJSON(DELETED_ORDERS_FILE, []);
         }
         if (body.shop && typeof body.shop === 'object') {
             writeJSON(SETTINGS_FILE, body.shop);
