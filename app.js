@@ -84,12 +84,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (serverProducts.length > 0) {
             // Server responded with live master catalog
             products = serverProducts.filter(p => !localDeleted.includes(p.id));
-            Storage.saveProducts(products);
 
-            // Clean local custom products to remove any deleted items
-            let localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
-            localCustom = localCustom.filter(cp => !localDeleted.includes(cp.id) && products.some(p => p.id === cp.id));
-            localStorage.setItem("rki_custom_products", JSON.stringify(localCustom));
+            // AUTO-REHYDRATE SAFEGUARD: If client has custom products in localStorage, preserve & re-sync them!
+            const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
+            const activeCustom = localCustom.filter(cp => !localDeleted.includes(cp.id));
+            if (activeCustom.length > 0) {
+                const missing = activeCustom.filter(cp => !products.some(p => p.id === cp.id));
+                if (missing.length > 0) {
+                    products = [...missing, ...products];
+                    fetch("/api/products/sync", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ products: missing })
+                    }).catch(() => {});
+                }
+            }
+
+            Storage.saveProducts(products);
         } else {
             // Offline fallback: Use cached products excluding deleted ones
             const allLocal = Storage.getProducts();

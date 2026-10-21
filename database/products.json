@@ -1,5 +1,56 @@
 [
   {
+    "id": "rk-custom-basin-counter",
+    "title": "BASIN COUNTER FLUTED DESIGN",
+    "category": "Custom Furniture",
+    "price": 39000,
+    "woodType": "PLY LAMINATE FINISH + WOOD",
+    "dimensions": "Custom Size",
+    "finish": "Fluted Wood Texture",
+    "image": "/uploads/custom_basin_counter.jpg",
+    "images": [
+      "/uploads/custom_basin_counter.jpg"
+    ],
+    "description": "Mastercrafted piece designed for unmatched durability and timeless beauty.",
+    "inStock": true,
+    "featured": true,
+    "badge": "DOUBLE DOOR WITH STORAGE"
+  },
+  {
+    "id": "rk-custom-woodruff-dressing",
+    "title": "WOODRUFF WITH DRESSING",
+    "category": "Bedroom",
+    "price": 99000,
+    "woodType": "PLY LAMINATE FINISH",
+    "dimensions": "8ft*8ft / CUSTOMISE SIZE",
+    "finish": "Gloss Veneer & Geometric Accent",
+    "image": "/uploads/custom_woodruff.jpg",
+    "images": [
+      "/uploads/custom_woodruff.jpg"
+    ],
+    "description": "Mastercrafted piece designed for unmatched durability and timeless beauty.",
+    "inStock": true,
+    "featured": true,
+    "badge": "Artisan Craft"
+  },
+  {
+    "id": "rk-custom-reception-counter",
+    "title": "RECEPTION COUNTER",
+    "category": "Bedroom",
+    "price": 99000,
+    "woodType": "PLY LAMINATE FINISH + WOOD",
+    "dimensions": "5ft*4ft",
+    "finish": "MARVEL TOP FINISH",
+    "image": "/uploads/custom_reception.jpg",
+    "images": [
+      "/uploads/custom_reception.jpg"
+    ],
+    "description": "Mastercrafted piece designed for unmatched durability and timeless beauty.",
+    "inStock": true,
+    "featured": true,
+    "badge": "Artisan Craft"
+  },
+  {
     "id": "rk-101",
     "title": "Royal Teak King Size Bed with Tufted Headboard",
     "category": "Bedroom",
