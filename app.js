@@ -435,6 +435,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         updateOrderModalPrice();
 
+        
+        if (modalThumb) {
+            modalThumb.style.cursor = "zoom-in";
+            modalThumb.title = "Click to View Full Size Image";
+            modalThumb.onclick = () => {
+                if (selectedProductForOrder) {
+                    openImageLightbox(selectedProductForOrder.id, modalThumb.src);
+                }
+            };
+        }
+
         orderModal.classList.add("active");
         document.body.style.overflow = "hidden";
     }
@@ -1032,6 +1043,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         }).join("");
 
         trackResultContainer.style.display = "block";
+
+        // Click to zoom on My Orders thumbnails
+        document.querySelectorAll(".fk-order-thumb-wrap").forEach(wrap => {
+            wrap.style.cursor = "zoom-in";
+            wrap.title = "Click to View Full Size Image";
+            wrap.addEventListener("click", () => {
+                const img = wrap.querySelector("img");
+                if (img && img.src) {
+                    const match = products.find(p => p.image === img.src || (p.images && p.images.includes(img.src)));
+                    if (match) {
+                        openImageLightbox(match.id, img.src);
+                    }
+                }
+            });
+        });
+
     }
 
     function escapeHtml(text) {
@@ -1044,10 +1071,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
     }
-});
-
-
-    // -------------------------------------------------------------
+// -------------------------------------------------------------
     // IMAGE LIGHTBOX / FULLSCREEN POPUP ENGINE
     // -------------------------------------------------------------
     const imageLightboxModal = document.getElementById("imageLightboxModal");
@@ -1243,3 +1267,4 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
     });
+});

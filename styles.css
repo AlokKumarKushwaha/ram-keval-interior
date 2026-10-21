@@ -3460,3 +3460,20 @@ img {
         font-size: 0.88rem !important;
     }
 }
+
+
+.summary-thumb {
+    cursor: zoom-in !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.summary-thumb:hover {
+    transform: scale(1.06);
+    box-shadow: 0 4px 14px rgba(139, 69, 19, 0.4);
+}
+.fk-order-thumb-wrap {
+    cursor: zoom-in !important;
+    transition: transform 0.2s ease;
+}
+.fk-order-thumb-wrap:hover {
+    transform: scale(1.06);
+}
