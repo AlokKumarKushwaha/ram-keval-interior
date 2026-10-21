@@ -263,7 +263,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const p = getFormattedPrices(prod.price);
             const badgeHtml = prod.badge ? `<span class="prod-badge">${escapeHtml(prod.badge)}</span>` : '';
             
-            const waMsg = encodeURIComponent(`Namaste Ram Keval Interior! I am interested in: "${prod.title}" (NPR रू ${p.nprFormatted} / INR ₹ ${p.inrFormatted}). Can you share more details?`);
+            const waMsg = encodeURIComponent(`Hello Ram Keval Interior! I am interested in: "${prod.title}" (NPR रू ${p.nprFormatted} / INR ₹ ${p.inrFormatted}). Could you please share more details?`);
             const waLink = `https://wa.me/${settings.whatsapp}?text=${waMsg}`;
 
             // Multi-Angle Selector Bar if product has multiple photos
@@ -294,10 +294,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             return `
                 <div class="product-card">
-                    <div class="prod-img-box">
+                    <div class="prod-img-box" data-id="${prod.id}" title="Click to View Full Size Image">
                         <img id="cardMainImg_${prod.id}" src="${prod.image || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80'}" alt="${escapeHtml(prod.title)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80'">
                         ${badgeHtml}
                         <span class="prod-category-tag">${escapeHtml(prod.category)}</span>
+                        <div class="zoom-indicator" title="Click to Zoom"><i class="fa-solid fa-magnifying-glass-plus"></i></div>
                     </div>
                     ${angleBarHtml}
                     <div class="prod-details">
@@ -330,6 +331,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                 </div>
             `;
         }).join("");
+
+        // Attach event listeners to Product Image Click (Lightbox Zoom)
+        document.querySelectorAll(".prod-img-box").forEach(box => {
+            box.addEventListener("click", () => {
+                const prodId = box.getAttribute("data-id");
+                const mainImg = box.querySelector("img");
+                const currentSrc = mainImg ? mainImg.src : null;
+                openImageLightbox(prodId, currentSrc);
+            });
+        });
 
         // Attach event listeners to Order buttons
         document.querySelectorAll(".order-trigger-btn").forEach(btn => {
@@ -882,33 +893,33 @@ document.addEventListener("DOMContentLoaded", async () => {
         trackResultContainer.innerHTML = ordersList.map(order => {
             const status = order.status || "Pending";
             let statusPillClass = "status-pill-pending";
-            let statusBadgeText = "Pending Verification / पुष्टि प्रक्रिया में";
+            let statusBadgeText = "Pending Verification";
             let statusIcon = "fa-clock";
             let stepIndex = 1; // 1: Placed, 2: Confirmed, 3: In Workshop, 4: Delivered
             let progressWidth = "15%";
-            let noteText = "Namaste! Aapka order receive ho gaya hai. Humare master craftsman Ram Keval ji aapse call par baat karke order details aur measurements confirm karenge.";
+            let noteText = "Thank you! Your order has been received. Master craftsman Ram Keval will contact you shortly to confirm order details and measurements.";
 
             if (status === "Confirmed") {
                 statusPillClass = "status-pill-confirmed";
-                statusBadgeText = "Order Confirmed / ऑर्डर कन्फर्म";
+                statusBadgeText = "Order Confirmed";
                 statusIcon = "fa-circle-check";
                 stepIndex = 2;
                 progressWidth = "48%";
-                noteText = "Aapka order confirm ho chuka hai! Seasoned solid wood select karke workshop schedule me assign kar diya gaya hai.";
+                noteText = "Your order is confirmed! Seasoned solid wood has been selected and assigned to the workshop crafting schedule.";
             } else if (status === "In Production") {
                 statusPillClass = "status-pill-production";
-                statusBadgeText = "In Production / वर्कशॉप में निर्माण जारी";
+                statusBadgeText = "In Production / Handcrafting";
                 statusIcon = "fa-hammer";
                 stepIndex = 3;
                 progressWidth = "78%";
-                noteText = "Aapka furniture humare master karigar workshop me pure solid wood se cutting, assembly aur hand-polishing kar rahe hain.";
+                noteText = "Our master carpenters are currently handcrafting your furniture with precision cutting, assembly, and hand-polishing.";
             } else if (status === "Delivered") {
                 statusPillClass = "status-pill-delivered";
-                statusBadgeText = "Delivered / सुरक्षित डिलीवर हो चुका";
+                statusBadgeText = "Delivered & Installed";
                 statusIcon = "fa-box-circle-check";
                 stepIndex = 4;
                 progressWidth = "100%";
-                noteText = "Aapka furniture safaltapoorvak deliver ho chuka hai. Ram Keval Interior par bharosa karne ke liye dhanyawaad!";
+                noteText = "Your furniture has been successfully delivered and installed. Thank you for choosing Ram Keval Interior!";
             }
 
             const step1Done = stepIndex >= 1 ? "done" : "";
@@ -1034,3 +1045,201 @@ document.addEventListener("DOMContentLoaded", async () => {
             .replace(/'/g, "&#039;");
     }
 });
+
+
+    // -------------------------------------------------------------
+    // IMAGE LIGHTBOX / FULLSCREEN POPUP ENGINE
+    // -------------------------------------------------------------
+    const imageLightboxModal = document.getElementById("imageLightboxModal");
+    const lightboxMainImg = document.getElementById("lightboxMainImg");
+    const lightboxTitle = document.getElementById("lightboxTitle");
+    const lightboxSpecs = document.getElementById("lightboxSpecs");
+    const lightboxPrice = document.getElementById("lightboxPrice");
+    const lightboxCounter = document.getElementById("lightboxCounter");
+    const lightboxThumbStrip = document.getElementById("lightboxThumbStrip");
+    const lightboxOrderBtn = document.getElementById("lightboxOrderBtn");
+    const lightboxWaBtn = document.getElementById("lightboxWaBtn");
+    const closeLightboxBtn = document.getElementById("closeLightboxBtn");
+    const lightboxPrevBtn = document.getElementById("lightboxPrevBtn");
+    const lightboxNextBtn = document.getElementById("lightboxNextBtn");
+
+    let currentLightboxProduct = null;
+    let currentLightboxImages = [];
+    let currentLightboxIndex = 0;
+
+    function openImageLightbox(prodId, initialSrc) {
+        const prod = products.find(p => p.id === prodId);
+        if (!prod) return;
+
+        currentLightboxProduct = prod;
+
+        // Build list of all available images (main + angles)
+        let imgs = [];
+        if (Array.isArray(prod.images) && prod.images.length > 0) {
+            imgs = [...prod.images];
+            if (prod.image && !imgs.includes(prod.image)) {
+                imgs.unshift(prod.image);
+            }
+        } else if (prod.image) {
+            imgs = [prod.image];
+        }
+
+        if (imgs.length === 0) return;
+        currentLightboxImages = imgs;
+
+        // Find initial index
+        currentLightboxIndex = initialSrc ? imgs.findIndex(src => src === initialSrc) : 0;
+        if (currentLightboxIndex < 0) currentLightboxIndex = 0;
+
+        renderLightboxView();
+        if (imageLightboxModal) {
+            imageLightboxModal.classList.add("active");
+            document.body.style.overflow = "hidden";
+        }
+    }
+
+    function renderLightboxView() {
+        if (!currentLightboxProduct || currentLightboxImages.length === 0) return;
+
+        const prod = currentLightboxProduct;
+        const currentSrc = currentLightboxImages[currentLightboxIndex];
+        const p = getFormattedPrices(prod.price);
+
+        if (lightboxMainImg) {
+            lightboxMainImg.style.opacity = "0.4";
+            lightboxMainImg.src = currentSrc;
+            lightboxMainImg.onload = () => {
+                lightboxMainImg.style.opacity = "1";
+            };
+        }
+
+        if (lightboxTitle) lightboxTitle.textContent = prod.title;
+        if (lightboxSpecs) {
+            const specList = [
+                prod.woodType ? `Wood: ${prod.woodType}` : '',
+                prod.dimensions ? `Size: ${prod.dimensions}` : '',
+                prod.category ? `Category: ${prod.category}` : ''
+            ].filter(Boolean);
+            lightboxSpecs.textContent = specList.join(" • ");
+        }
+
+        if (lightboxPrice) {
+            lightboxPrice.textContent = `${p.primaryText} (${p.secondaryText})`;
+        }
+
+        if (lightboxCounter) {
+            if (currentLightboxImages.length > 1) {
+                lightboxCounter.style.display = "block";
+                lightboxCounter.textContent = `${currentLightboxIndex + 1} / ${currentLightboxImages.length}`;
+            } else {
+                lightboxCounter.style.display = "none";
+            }
+        }
+
+        // Show/hide prev/next buttons
+        if (lightboxPrevBtn && lightboxNextBtn) {
+            if (currentLightboxImages.length > 1) {
+                lightboxPrevBtn.style.display = "flex";
+                lightboxNextBtn.style.display = "flex";
+            } else {
+                lightboxPrevBtn.style.display = "none";
+                lightboxNextBtn.style.display = "none";
+            }
+        }
+
+        // WhatsApp inquiry button
+        if (lightboxWaBtn) {
+            const waMsg = encodeURIComponent(`Hello Ram Keval Interior! I am viewing "${prod.title}" full size on your website (Price: ${p.primaryText}). Can you share more details?`);
+            lightboxWaBtn.href = `https://wa.me/${settings.whatsapp}?text=${waMsg}`;
+        }
+
+        // Thumbnail strip
+        if (lightboxThumbStrip) {
+            if (currentLightboxImages.length > 1) {
+                lightboxThumbStrip.innerHTML = currentLightboxImages.map((src, idx) => {
+                    return `<img src="${src}" class="lightbox-thumb ${idx === currentLightboxIndex ? 'active' : ''}" data-idx="${idx}" alt="Angle ${idx + 1}" onerror="this.style.display='none'">`;
+                }).join("");
+
+                lightboxThumbStrip.querySelectorAll(".lightbox-thumb").forEach(thumb => {
+                    thumb.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        currentLightboxIndex = Number(thumb.getAttribute("data-idx")) || 0;
+                        renderLightboxView();
+                    });
+                });
+                lightboxThumbStrip.style.display = "flex";
+            } else {
+                lightboxThumbStrip.innerHTML = "";
+                lightboxThumbStrip.style.display = "none";
+            }
+        }
+    }
+
+    function closeImageLightbox() {
+        if (imageLightboxModal) {
+            imageLightboxModal.classList.remove("active");
+            document.body.style.overflow = "";
+        }
+    }
+
+    if (closeLightboxBtn) {
+        closeLightboxBtn.addEventListener("click", closeImageLightbox);
+    }
+
+    if (lightboxPrevBtn) {
+        lightboxPrevBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (currentLightboxImages.length > 1) {
+                currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxImages.length) % currentLightboxImages.length;
+                renderLightboxView();
+            }
+        });
+    }
+
+    if (lightboxNextBtn) {
+        lightboxNextBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (currentLightboxImages.length > 1) {
+                currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxImages.length;
+                renderLightboxView();
+            }
+        });
+    }
+
+    if (imageLightboxModal) {
+        imageLightboxModal.addEventListener("click", (e) => {
+            // Close if clicking outside the content wrap
+            if (e.target === imageLightboxModal) {
+                closeImageLightbox();
+            }
+        });
+    }
+
+    if (lightboxOrderBtn) {
+        lightboxOrderBtn.addEventListener("click", () => {
+            if (currentLightboxProduct) {
+                const prodId = currentLightboxProduct.id;
+                closeImageLightbox();
+                openOrderModal(prodId);
+            }
+        });
+    }
+
+    // Keyboard support for Lightbox (Esc, Left, Right)
+    document.addEventListener("keydown", (e) => {
+        if (imageLightboxModal && imageLightboxModal.classList.contains("active")) {
+            if (e.key === "Escape") {
+                closeImageLightbox();
+            } else if (e.key === "ArrowLeft") {
+                if (currentLightboxImages.length > 1) {
+                    currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxImages.length) % currentLightboxImages.length;
+                    renderLightboxView();
+                }
+            } else if (e.key === "ArrowRight") {
+                if (currentLightboxImages.length > 1) {
+                    currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxImages.length;
+                    renderLightboxView();
+                }
+            }
+        }
+    });

@@ -99,7 +99,7 @@
             <div style="display: flex; align-items: center; gap: 16px; font-size: 0.82rem; flex-wrap: wrap;">
                 <span><i class="fa-solid fa-phone" style="color: #d4a373;"></i> <strong>+977 9823471413 / +977 9823725730</strong> (For Nepal)</span>
                 <span><i class="fa-solid fa-envelope" style="color: #d4a373;"></i> ramashisha55@gmail.com</span>
-                <a href="#orders" id="topTrackLink" class="top-track-btn" style="color: #ffd166; font-weight: 600; text-decoration: underline;"><i class="fa-solid fa-box-open"></i> My Orders (मेरे ऑर्डर्स)</a>
+                <a href="#orders" id="topTrackLink" class="top-track-btn" style="color: #ffd166; font-weight: 600; text-decoration: underline;"><i class="fa-solid fa-box-open"></i> My Orders</a>
             </div>
         </div>
     </div>
@@ -128,7 +128,7 @@
                     <li class="mobile-only-menu-item">
                         <button id="mobileTrackOrderBtn" class="btn btn-outline" style="color: var(--primary); border-color: var(--accent); width: 100%; margin-top: 8px; padding: 11px 14px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
                             <span style="display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-box-open" style="font-size: 1.1rem;"></i> My Orders (मेरे ऑर्डर्स)
+                                <i class="fa-solid fa-box-open" style="font-size: 1.1rem;"></i> My Orders
                             </span>
                             <span id="mobileOrdersBadge" class="order-counter-badge" style="display: none;">0</span>
                         </button>
@@ -163,7 +163,7 @@
                             <li>
                                 <button type="button" class="account-menu-item" id="menuMyOrdersBtn">
                                     <i class="fa-solid fa-box-open" style="color: #1976d2;"></i>
-                                    <span>Orders (मेरे ऑर्डर्स)</span>
+                                    <span>My Orders</span>
                                     <span id="menuOrdersCountTag" class="menu-count-pill" style="display: none;">0</span>
                                 </button>
                             </li>
@@ -476,7 +476,7 @@
             <!-- Dual Currency Switcher for Nepal (Main Hub) & India (Sub Branches) -->
             <div class="catalog-currency-bar">
                 <div class="curr-bar-left">
-                    <span class="curr-bar-title"><i class="fa-solid fa-coins"></i> <strong>Currency / मुद्रा:</strong></span>
+                    <span class="curr-bar-title"><i class="fa-solid fa-coins"></i> <strong>Select Currency:</strong></span>
                     <div class="currency-toggle-pills" id="currencyTogglePills">
                         <button type="button" class="curr-pill active" data-currency="NPR" id="btnCurrNPR" title="Nepal Rupee (Kathmandu Main Hub)">
                             <span class="curr-flag">🇳🇵</span> <strong>NPR (रू)</strong> <span class="curr-sub">Nepal Hub</span>
@@ -542,7 +542,7 @@
                 <!-- Angle Previews in Order Modal -->
                 <div id="modalAngleTray" style="display: none; padding: 8px 12px; margin-bottom: 14px; background: #faf6f0; border-radius: 8px; border: 1px solid #eadbc8; overflow-x: auto;">
                     <div style="font-size: 0.75rem; font-weight: 600; color: #8b4513; margin-bottom: 6px;">
-                        <i class="fa-solid fa-camera"></i> Inspect Product Angles (फोटो का एंगल बदलें):
+                        <i class="fa-solid fa-camera"></i> Inspect Product Angles (Click to Switch):
                     </div>
                     <div id="modalAnglePills" style="display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto;"></div>
                 </div>
@@ -551,8 +551,8 @@
                 <div class="no-payment-banner">
                     <i class="fa-solid fa-circle-check" style="font-size: 1.2rem;"></i>
                     <div>
-                        <strong>No Online Payment Required!</strong><br>
-                        Aapko abhi koi paisa nahi dena hai. Order details bhejein, Ram Keval ji ki team aapse call par baat karke order confirm karegi (Cash on Delivery / Pay on Delivery).
+                        <strong>No Advance Payment Required!</strong><br>
+                        Zero upfront charges. Submit your order details, and master craftsman Ram Keval's team will contact you to confirm specifications & measurements (Cash on Delivery / Pay on Delivery).
                     </div>
                 </div>
 
@@ -566,7 +566,7 @@
                     <div class="form-row-2">
                         <div class="form-group">
                             <label for="custName"><i class="fa-solid fa-user"></i> Full Name *</label>
-                            <input type="text" id="custName" required placeholder="Apna pura naam likhein">
+                            <input type="text" id="custName" required placeholder="Enter your full name">
                         </div>
                         <div class="form-group">
                             <label for="custPhone"><i class="fa-solid fa-phone"></i> Mobile / WhatsApp *</label>
@@ -593,7 +593,7 @@
 
                     <div class="form-group">
                         <label for="custAddress"><i class="fa-solid fa-location-dot"></i> Delivery Address / Landmark *</label>
-                        <textarea id="custAddress" rows="2" required placeholder="Ghar ka pata, colony ya landmark likhein"></textarea>
+                        <textarea id="custAddress" rows="2" required placeholder="Enter complete delivery address, city or landmark"></textarea>
                     </div>
 
                     <div class="form-group">
@@ -619,7 +619,7 @@
                     <i class="fa-solid fa-check"></i>
                 </div>
                 <h2>Order Successfully Placed!</h2>
-                <p style="color: #666; margin: 8px 0 14px;">Aapka order successfully darj ho gaya hai. Humare master craftsman Ram Keval ji apko jald hi call karenge.</p>
+                <p style="color: #666; margin: 8px 0 14px;">Your order has been placed successfully. Master craftsman Ram Keval will contact you shortly to confirm measurements and delivery schedule.</p>
                 <div>Order Number:</div>
                 <div class="success-order-id" id="successOrderIdDisplay">RKI-0000</div>
 
@@ -629,13 +629,13 @@
                     <div><strong>Total:</strong> <span id="successTotal" style="color: var(--primary); font-weight: bold;"></span></div>
                     <div><strong>Payment:</strong> <span style="color: #2e7d32; font-weight: 600;">Cash / Pay on Delivery</span></div>
                     <div style="margin-top: 6px; font-size: 0.8rem; color: #2e7d32; font-weight: 600;">
-                        <i class="fa-solid fa-circle-check"></i> Saved to your Account! Token yaad rakhne ki jarurat nahi hai.
+                        <i class="fa-solid fa-circle-check"></i> Saved to your Account! Track anytime using your mobile number.
                     </div>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     <button class="btn btn-primary" id="successTrackLiveBtn" style="background: var(--primary); border-color: var(--primary); font-weight: 700; padding: 12px;">
-                        <i class="fa-solid fa-box-open"></i> View in My Orders (मेरे ऑर्डर्स में देखें)
+                        <i class="fa-solid fa-box-open"></i> View in My Orders
                     </button>
                     <a href="#" id="sendWaOrderBtn" target="_blank" class="btn btn-primary" style="background: #25d366; border-color: #25d366;">
                         <i class="fa-brands fa-whatsapp"></i> Send Order Copy on WhatsApp
@@ -655,7 +655,7 @@
                         <i class="fa-solid fa-box-open" style="font-size: 1.2rem;"></i>
                     </div>
                     <div>
-                        <h3 style="color: #fff; margin: 0; font-size: 1.15rem;">My Orders (मेरे ऑर्डर्स)</h3>
+                        <h3 style="color: #fff; margin: 0; font-size: 1.15rem;">My Orders</h3>
                         <p style="color: #d4a373; margin: 0; font-size: 0.78rem;">Ram Keval Interior • Order Tracking & Account</p>
                     </div>
                 </div>
@@ -676,7 +676,7 @@
                             </div>
                         </div>
                     </div>
-                    <button type="button" id="btnSwitchPhone" class="btn-switch-account" title="Dusra mobile number dalein">
+                    <button type="button" id="btnSwitchPhone" class="btn-switch-account" title="Change mobile number">
                         <i class="fa-solid fa-arrow-right-arrow-left"></i> Change No.
                     </button>
                 </div>
@@ -688,7 +688,7 @@
                         <strong style="color: #2b170c; font-size: 0.95rem;">Apna Mobile Number ya Order ID Dalein:</strong>
                     </div>
                     <p style="font-size: 0.82rem; color: #666; margin-bottom: 12px;">
-                        Bina kisi password ya token ke apne sabhi furniture orders dekhne ke liye apna <strong>10-digit Mobile Number</strong> enter karein:
+                        Track all your furniture orders instantly without passwords. Enter your <strong>10-digit Mobile Number</strong>:
                     </p>
                     <form id="trackOrderForm" style="display: flex; gap: 8px;">
                         <input type="text" id="trackOrderInput" placeholder="Enter Mobile Number (e.g. 9823471413)" required style="flex: 1; padding: 11px 14px; border: 2px solid var(--accent); border-radius: 8px; font-size: 0.92rem;">
@@ -801,6 +801,36 @@
             </div>
         </div>
     </footer>
+
+    
+    <!-- Fullscreen Image Lightbox Modal -->
+    <div class="modal-overlay image-lightbox-overlay" id="imageLightboxModal">
+        <button class="lightbox-close-btn" id="closeLightboxBtn" title="Close (Esc)">&times;</button>
+        <button class="lightbox-nav-btn lightbox-prev-btn" id="lightboxPrevBtn" title="Previous Image (Left Arrow)"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="lightbox-nav-btn lightbox-next-btn" id="lightboxNextBtn" title="Next Image (Right Arrow)"><i class="fa-solid fa-chevron-right"></i></button>
+        <div class="lightbox-content-wrap">
+            <div class="lightbox-img-container">
+                <img src="" alt="Furniture Full View" id="lightboxMainImg" class="lightbox-main-img">
+                <div class="lightbox-counter" id="lightboxCounter">1 / 1</div>
+            </div>
+            <div class="lightbox-caption-bar">
+                <div class="lightbox-meta">
+                    <h3 id="lightboxTitle">Product Title</h3>
+                    <div id="lightboxSpecs" class="lightbox-specs">Wood: Teak • Size: 6x6.5 ft</div>
+                    <div id="lightboxPrice" class="lightbox-price">NPR रू 85,000</div>
+                </div>
+                <div class="lightbox-actions">
+                    <button type="button" class="btn btn-primary" id="lightboxOrderBtn">
+                        <i class="fa-solid fa-cart-arrow-down"></i> Order Now
+                    </button>
+                    <a href="#" target="_blank" class="btn-wa-icon" id="lightboxWaBtn" title="Inquire on WhatsApp">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="lightbox-thumbnails-strip" id="lightboxThumbStrip"></div>
+        </div>
+    </div>
 
     <!-- Floating Direct WhatsApp Button -->
     <a href="https://wa.me/9779823471413?text=Namaste%20Ram%20Keval%20Interior,%20I%20am%20interested%20in%20your%20furniture%20and%20interior%20services." target="_blank" class="floating-wa-btn" title="Chat Directly on WhatsApp (+977 9823471413)">
