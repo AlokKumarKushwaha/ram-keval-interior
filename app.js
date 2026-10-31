@@ -79,38 +79,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log("Server waking up / offline fallback active...");
         }
 
-        if (serverProducts.length > 0) {
-            // Server is master of truth: Never filter out products that are active on the live server!
+        if (Array.isArray(serverProducts)) {
+            // Server responded: Server is master of truth!
+            // If admin permanently deleted items (so server has 0 items), respect 0 items!
             products = serverProducts;
-
-            // Clean up any stale deleted tombstones from client browser that are actually live on server
-            try {
-                let localDeleted = JSON.parse(localStorage.getItem("rki_deleted_products") || "[]");
-                if (localDeleted.length > 0) {
-                    localDeleted = localDeleted.filter(delId => !serverProducts.some(sp => sp.id === delId));
-                    localStorage.setItem("rki_deleted_products", JSON.stringify(localDeleted));
-                }
-            } catch (delErr) {}
-
-            // AUTO-REHYDRATE SAFEGUARD: If client has custom products in localStorage, preserve & re-sync them!
-            const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
-            if (localCustom.length > 0) {
-                const missing = localCustom.filter(cp => !products.some(p => p.id === cp.id));
-                if (missing.length > 0) {
-                    products = [...missing, ...products];
-                    fetch("/api/products/sync", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ products: missing })
-                    }).catch(() => {});
-                }
-            }
-
             Storage.saveProducts(products);
         } else {
-            // Offline fallback: Use cached products
+            // Network failure fallback: Use cached products
             const allLocal = Storage.getProducts();
-            products = (allLocal && allLocal.length > 0) ? allLocal : INITIAL_PRODUCTS;
+            products = Array.isArray(allLocal) ? allLocal : [];
         }
 
         renderProducts();
