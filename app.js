@@ -79,17 +79,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log("Server waking up / offline fallback active...");
         }
 
-        const localDeleted = JSON.parse(localStorage.getItem("rki_deleted_products") || "[]");
-
         if (serverProducts.length > 0) {
-            // Server responded with live master catalog
-            products = serverProducts.filter(p => !localDeleted.includes(p.id));
+            // Server is master of truth: Never filter out products that are active on the live server!
+            products = serverProducts;
+
+            // Clean up any stale deleted tombstones from client browser that are actually live on server
+            try {
+                let localDeleted = JSON.parse(localStorage.getItem("rki_deleted_products") || "[]");
+                if (localDeleted.length > 0) {
+                    localDeleted = localDeleted.filter(delId => !serverProducts.some(sp => sp.id === delId));
+                    localStorage.setItem("rki_deleted_products", JSON.stringify(localDeleted));
+                }
+            } catch (delErr) {}
 
             // AUTO-REHYDRATE SAFEGUARD: If client has custom products in localStorage, preserve & re-sync them!
             const localCustom = JSON.parse(localStorage.getItem("rki_custom_products") || "[]");
-            const activeCustom = localCustom.filter(cp => !localDeleted.includes(cp.id));
-            if (activeCustom.length > 0) {
-                const missing = activeCustom.filter(cp => !products.some(p => p.id === cp.id));
+            if (localCustom.length > 0) {
+                const missing = localCustom.filter(cp => !products.some(p => p.id === cp.id));
                 if (missing.length > 0) {
                     products = [...missing, ...products];
                     fetch("/api/products/sync", {
@@ -102,9 +108,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             Storage.saveProducts(products);
         } else {
-            // Offline fallback: Use cached products excluding deleted ones
+            // Offline fallback: Use cached products
             const allLocal = Storage.getProducts();
-            products = allLocal.filter(p => !localDeleted.includes(p.id));
+            products = (allLocal && allLocal.length > 0) ? allLocal : INITIAL_PRODUCTS;
         }
 
         renderProducts();
